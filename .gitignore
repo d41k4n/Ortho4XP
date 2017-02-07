@@ -1,2 +1,11 @@
 .idea/
-last_map_position.txt
+/last_map_position.txt
+/Masks
+/Elevation_data
+/Orthophotos
+/OSM_data
+/Overlay_sniff_dir
+/Previews
+/Tiles
+/tmp
+/yOrtho4XP_Overlays

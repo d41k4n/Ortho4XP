@@ -1,8 +1,8 @@
 #!/usr/bin/env python3                                                       
 ##############################################################################
 # Ortho4XP : A base mesh creation tool for the X-Plane 11 flight simulator.  #
-# Version  : 1.20b                                                            #
-# Copyright 2016 Oscar Pilote                                                #
+# Version  : 1.20b                                                           #
+# Copyright 2016-2017 Oscar Pilote                                           #
 # Thanks to all that have contributed to improvement of the code.            #
 ##############################################################################
 #                                                                            #
@@ -23,15 +23,56 @@
 #                                                                            #
 ##############################################################################
 
-version = ' v1.20b'
+#
+# Required Imports
+#
 
+import array
+import collections
+import hashlib
+import io
+from math import *
+import numpy
 import os
+import random
+import requests
+import shutil
+import struct
+import subprocess
 import sys
+import threading
+import time
+import tkinter.ttk as ttk  # Themed Widgets
+from tkinter import *  # GUI
+from tkinter import filedialog
+from PIL import Image, ImageDraw, ImageTk
+
+#
+# Optional Imports
+#
+
+# XXX: temporary, until all the instances are replaced by os.path.join
+dir_sep = '/'
 
 try:
     import encodings.idna
-except:
-    pass
+    encodings_idna_loaded = True
+except ImportError:
+    encodings_idna_loaded = False
+    encodings = {'idna': None}
+
+try:
+    import gdal
+    gdal_loaded = True
+except ImportError:
+    gdal_loaded = False
+    gdal = None
+
+#
+# Setup and tweaks
+#
+
+Image.MAX_IMAGE_PIXELS = 1000000000  # Not a decompression bomb attack!
 
 if getattr(sys, 'frozen', False):
     Ortho4XP_dir = '..'
@@ -40,32 +81,10 @@ if getattr(sys, 'frozen', False):
 else:
     Ortho4XP_dir = '.'
 
-try:
-    sys.path.append(os.getcwd() + '/' + Ortho4XP_dir + '/bin/Modules')
-except:
-    pass
+modules_dir = os.path.join(os.getcwd(), Ortho4XP_dir, "bin", "Modules")
+if os.path.exists(modules_dir):
+    sys.path.append(modules_dir)
 
-import requests
-
-import threading, time, shutil, io
-from math import *
-import array, numpy
-import collections
-import struct
-import hashlib
-from tkinter import *  # GUI
-from tkinter import filedialog
-import tkinter.ttk as ttk  # Themed Widgets
-from PIL import Image, ImageDraw, ImageTk
-
-Image.MAX_IMAGE_PIXELS = 1000000000  # Not a decompression bomb attack!
-import subprocess
-
-try:
-    import gdal
-    gdal_loaded = True
-except:
-    gdal_loaded = False
 
 ########################################################################
 #
@@ -74,6 +93,8 @@ except:
 # The following are initialisation of the variables, they are then superseded by your Ortho4XP.cfg file but are here
 # in case your config file misses some of then (evolution, edit, ...).  Do not modify them here but use your
 # config file instead.
+
+version = ' v1.20b'
 
 configvars = ['default_website', 'default_zl', 'water_option', 'sea_texture_params', 'cover_airports_with_highres',
               'cover_zl', 'cover_extent', 'min_area', 'sea_equiv', 'do_not_flatten_these_list', 'meshzl',
@@ -172,10 +193,9 @@ explanation = {}
 for item in configvars:
     explanation[item] = 'TODO!'
 
-try:
-    exec(open(Ortho4XP_dir + dir_sep + 'Help.py').read(), globals())
-except:
-    pass
+help_module = os.path.join(Ortho4XP_dir, 'Help.py')
+if os.path.exists(help_module):
+    exec(open(help_module).read(), globals())
 
 for item in configvars:
     try:
@@ -185,7 +205,8 @@ for item in configvars:
 
 # These are not put in the interface
 build_dir = "default"
-tricky_provider_hack = 70000  # The minimum size a wms2048 image should be to be accepted (trying to avoid missed cached)
+# The minimum size a wms2048 image should be to be accepted (trying to avoid missed cached)
+tricky_provider_hack = 70000
 water_overlay = True
 wms_timeout = 60
 pools_max_points = 65536  # do not change this !
@@ -200,42 +221,38 @@ busy_slots_mont = 0
 busy_slots_conv = 0
 
 if 'dar' in sys.platform:
-    dir_sep = '/'
-    Triangle4XP_cmd = Ortho4XP_dir + "/Utils/Triangle4XP.app "
+    Triangle4XP_cmd = os.path.join(Ortho4XP_dir, "Utils", "Triangle4XP.app") + " "
     copy_cmd = "cp "
     delete_cmd = "rm "
     rename_cmd = "mv "
     unzip_cmd = "7z "
     convert_cmd = "convert "
-    convert_cmd_bis = Ortho4XP_dir + dir_sep + "Utils" + dir_sep + "nvcompress" + dir_sep + "nvcompress-osx -bc1 -fast "
+    convert_cmd_bis = os.path.join(Ortho4XP_dir, "Utils", "nvcompress", "nvcompress-osx") + " -bc1 -fast "
     gimp_cmd = "gimp "
     devnull_rdir = " >/dev/null 2>&1"
     shutdown_cmd = 'sudo shutdown -h now'
-    os.system('chmod a+x ' + Ortho4XP_dir + dir_sep + 'Utils/DSFTool.app')
-    os.system('chmod a+x ' + Ortho4XP_dir + dir_sep + 'Utils/Triangle4XP.app')
-    os.system('chmod a+x ' + Ortho4XP_dir + dir_sep + 'Utils/nvcompress/nvcompress-osx')
-
+    os.system('chmod a+x ' + os.path.join(Ortho4XP_dir, "Utils", 'DSFTool.app'))
+    os.system('chmod a+x ' + os.path.join(Ortho4XP_dir, "Utils", 'Triangle4XP.app'))
+    os.system('chmod a+x ' + os.path.join(Ortho4XP_dir, "Utils", 'nvcompress", "nvcompress-osx'))
 
 elif 'win' in sys.platform:
-    dir_sep = '\\'
-    Triangle4XP_cmd = Ortho4XP_dir + dir_sep + "Utils" + dir_sep + "Triangle4XP.exe "
+    Triangle4XP_cmd = os.path.join(Ortho4XP_dir, "Utils", "Triangle4XP.exe") + " "
     copy_cmd = "copy "
     delete_cmd = "del "
     rename_cmd = "move "
-    unzip_cmd = Ortho4XP_dir + dir_sep + "Utils" + dir_sep + "7z.exe "
-    if os.path.isfile(Ortho4XP_dir + dir_sep + "Utils" + dir_sep + "convert.exe"):
-        convert_cmd = Ortho4XP_dir + dir_sep + "Utils" + dir_sep + "convert.exe "
+    unzip_cmd = os.path.join(Ortho4XP_dir, "Utils", "7z.exe") + " "
+    if os.path.isfile(os.path.join(Ortho4XP_dir, "Utils", "convert.exe")):
+        convert_cmd = os.path.join(Ortho4XP_dir, "Utils", "convert.exe") + " "
     else:
         convert_cmd = "convert "
-    convert_cmd_bis = Ortho4XP_dir + dir_sep + "Utils" + dir_sep + "nvcompress" + dir_sep + "nvcompress.exe -bc1 -fast "
-    gimp_cmd = "c:\\Program Files\\GIMP 2\\bin\\gimp-console-2.8.exe "
-    showme_cmd = Ortho4XP_dir + "/Utils/showme.exe "
+    convert_cmd_bis = os.path.join(Ortho4XP_dir, "Utils", "nvcompress", "nvcompress.exe") + " -bc1 -fast "
+    gimp_cmd = os.path.join("c:", "Program Files", "GIMP 2", "bin", "gimp-console-2.8.exe") + " "
+    showme_cmd = os.path.join(Ortho4XP_dir, "Utils", "showme.exe") + " "
     devnull_rdir = " > nul  2>&1"
     shutdown_cmd = 'shutdown /s /f /t 0'
 
 else:
-    dir_sep = '/'
-    Triangle4XP_cmd = Ortho4XP_dir + "/Utils/Triangle4XP "
+    Triangle4XP_cmd = os.path.join(Ortho4XP_dir, "Utils", "Triangle4XP") + " "
     delete_cmd = "rm "
     copy_cmd = "cp "
     rename_cmd = "mv "
@@ -245,8 +262,8 @@ else:
     gimp_cmd = "gimp "
     devnull_rdir = " >/dev/null 2>&1 "
     shutdown_cmd = 'sudo shutdown -h now'
-    os.system('chmod a+x ' + Ortho4XP_dir + dir_sep + 'Utils/DSFTool')
-    os.system('chmod a+x ' + Ortho4XP_dir + dir_sep + 'Utils/Triangle4XP')
+    os.system('chmod a+x ' + os.path.join(Ortho4XP_dir, "Utils", 'DSFTool'))
+    os.system('chmod a+x ' + os.path.join(Ortho4XP_dir, "Utils", 'Triangle4XP'))
 
 #
 #   END OF FACTORY DEFAULT VALUES
@@ -259,13 +276,15 @@ dico_edge_markers = {'outer': '1', 'inner': '1', 'coastline': '2',
 dico_tri_markers = {'water': '1', 'sea': '2', 'sea_equiv': '3', 'altitude': '4'}
 
 try:
-    exec(open(Ortho4XP_dir + dir_sep + 'Carnet_d_adresses.py').read())
+    exec(open(os.path.join(Ortho4XP_dir, 'Carnet_d_adresses.py')).read())
 except:
     print("The file Carnet_d_adresses.py does not follow the syntactic rules.")
     time.sleep(5)
     sys.exit()
+
 try:
-    exec(open(Ortho4XP_dir + dir_sep + 'APL_scripts.py').read())
+    if os.path.exists(os.path.join(Ortho4XP_dir, 'APL_scripts.py')):
+        exec(open(os.path.join(Ortho4XP_dir, 'APL_scripts.py')).read())
 except:
     pass
 
@@ -273,31 +292,31 @@ except:
 ##############################################################################
 # Minimalist error messages.                                                 #
 ##############################################################################
-##############################################################################
+
 def usage(reason, do_i_quit=True):
     if reason == 'config':
-        print("The file Ortho4XP.cfg was not found or does not follow the " + \
+        print("The file Ortho4XP.cfg was not found or does not follow the " +
               "syntactic rules.")
     elif reason == 'command_line':
         print("The command line does not follow the syntactic rules.")
     elif reason == 'osm_tags':
-        print("I had a problem downloadings data from Openstreetmap.\n" + \
-              "Your connection may be unavailable or the Overpass server\n" + \
+        print("I had a problem downloadings data from Openstreetmap.\n" +
+              "Your connection may be unavailable or the Overpass server\n" +
               "may be unreachable.")
     elif reason == 'dem_files':
         print(
-            "!!!I could not fin the elevation data file, or it was broken.\n!!!I go on with all zero elevation (perhaps a tile full of sea ?)")
+            "!!!I could not fin the elevation data file, or it was broken.\n" +
+            "!!!I go on with all zero elevation (perhaps a tile full of sea ?)")
     elif reason == 'adresses':
-        print("The file Carnet_d_adresses.py does not follow the syntactic" + \
+        print("The file Carnet_d_adresses.py does not follow the syntactic" +
               " rules.")
     elif reason == 'crash':
-        print("The mesh algorithm Triangle4XP has encountered a problem and" + \
+        print("The mesh algorithm Triangle4XP has encountered a problem and" +
               " had to stop.")
     elif reason == 'inprogress':
         print("This functionality is not yet supported.")
-    if do_i_quit == True:
+    if do_i_quit:
         sys.exit()
-    return
 
 
 ##############################################################################
@@ -2200,6 +2219,14 @@ def load_altitude_matrix(lat, lon, filename=''):
     filename_srtm1 = downloaded_dem_filename(lat, lon, 'SRTMv3_1(void filled)')
     filename_srtm3 = downloaded_dem_filename(lat, lon, 'SRTMv3_3(void filled)')
     filename_viewfinderpanorama = downloaded_dem_filename(lat, lon, 'de_Ferranti')
+
+    # XXX: tmp debug
+    tmp_debug_cwd = os.getcwd()
+    tmp_debug_elevation_data_found_1 = os.path.exists(os.path.join('.', 'Elevation_data'))
+    tmp_debug_elevation_data_found_2 = os.path.exists(os.path.join('./Elevation_data'))
+    tmp_debug_hgt_found_1 = os.path.exists(os.path.join('.', 'Elevation_data', 'N48W006.hgt'))
+    tmp_debug_hgt_found_2 = os.path.exists(os.path.join('./Elevation_data/N48W006.hgt'))
+
     if filename == '':
         if os.path.isfile(filename_viewfinderpanorama):
             filename = filename_viewfinderpanorama
