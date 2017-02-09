@@ -319,8 +319,6 @@ def usage(reason, do_i_quit=True):
         sys.exit()
 
 
-##############################################################################
-
 #######################
 #
 # For future use
@@ -328,106 +326,106 @@ def usage(reason, do_i_quit=True):
 def build_landclass_poly_file(lat0, lon0, build_dir, file_to_sniff, dem_alternative=False):
     re_encode_dsf(lat0, lon0, build_dir, file_to_sniff, True, dem_alternative, True)
     return
-    # Don't go further now !
-    t1 = time.time()
-    if not os.path.exists(build_dir):
-        os.makedirs(build_dir)
-    strlat = '{:+.0f}'.format(lat0).zfill(3)
-    strlon = '{:+.0f}'.format(lon0).zfill(4)
-    poly_file = build_dir + dir_sep + 'Data' + strlat + strlon + '.poly'
-    airport_file = build_dir + dir_sep + 'Data' + strlat + strlon + '.apt'
-    patch_dir = Ortho4XP_dir + dir_sep + 'Patches' + dir_sep + strlat + strlon
-    dico_nodes = {}
-    dico_edges = {}
-    dico_edges_water = {}
-    water_seeds = []
-    sea_seeds = []
-    sea_equiv_seeds = []
-    flat_airport_seeds = []
-    flat_patch_seeds = []
-    sloped_patch_seeds = []
-    alt_seeds = []
-
-    zone_list = []  # !!!!!!!!!!!!!!!!!!!!!!!!
-    poly_list = [region[0] for region in zone_list]
-    bbox_list = [compute_bbox(poly) for poly in poly_list]
-    print("-> Analyzing patch data ")
-    include_patch_data(lat0, lon0, patch_dir, dico_nodes, dico_edges, flat_patch_seeds, sloped_patch_seeds, alt_seeds,
-                       poly_list, bbox_list)
-    print(poly_list)
-    print("-> Analyzing input landclass mesh ")
-    (tri_list, ter_list, tri_list_kept, hole_seeds, textures) = read_dsf(lat0, lon0, build_dir, file_to_sniff,
-                                                                         poly_list, bbox_list, dem_alternative)
-    return textures
-    # hole_seeds=[]
-    print("tri_list :", len(tri_list))
-    print("ter_list :", len(ter_list))
-
-    # for key in tri_list_kept:
-    #    try:
-    #        print(key)
-    #        print(len(tri_list_kept[key]))
-    #        print(' ')
-    #    except:
-    #        pass
-    # print("-> Computing splitting edges and building raster landclass map ")
-    # tri_list=split_mesh_according_to_poly_list(lat0,lon0,triangles,poly_list,bbox_list)
-    print("-> Building poly file for Triangle4XP ")
-    ttest = time.time()
-    for tri, ter in zip(tri_list, ter_list):
-        node1 = ['{:.6f}'.format(tri[0][1]), '{:.6f}'.format(tri[0][0])]  # i.e. [lat,lon]
-        node2 = ['{:.6f}'.format(tri[1][1]), '{:.6f}'.format(tri[1][0])]  # i.e. [lat,lon]
-        node3 = ['{:.6f}'.format(tri[2][1]), '{:.6f}'.format(tri[2][0])]  # i.e. [lat,lon]
-        keep_node(node1, lat0, lon0, dico_nodes, tri[0][2])
-        keep_node(node2, lat0, lon0, dico_nodes, tri[1][2])
-        keep_node(node3, lat0, lon0, dico_nodes, tri[2][2])
-        keep_edge_unique(node1, node2, 'inner', dico_edges)
-        keep_edge_unique(node2, node3, 'inner', dico_edges)
-        keep_edge_unique(node3, node1, 'inner', dico_edges)
-        if ter == 0:  # water
-            keep_edge(node1, node2, 'inner', dico_edges_water)
-            keep_edge(node2, node3, 'inner', dico_edges_water)
-            keep_edge(node3, node1, 'inner', dico_edges_water)
-            # if tri[3]==0: # terrain_Water
-            #    tri_bary=[(tri[0][0]+tri[1][0]+tri[2][0])/3,(tri[0][1]+tri[1][1]+tri[2][1])/3]
-            #    water_seeds.append(tri_bary)
-    for edge in dico_edges_water:
-        node0 = edge.split('|')[0].split('_')
-        node1 = edge.split('|')[1].split('_')
-        keep_edge(node0, node1, 'inner', dico_edges)
-    print("time to keep edges : ", time.time() - ttest)
-
-    # if zone_list != []:
-    #    print("-> Adding of edges related to the orthophoto grid and computation of\n"
-    #          "     their intersections with OSM edges,")
-    #    dico_edges=cut_edges_with_grid(lat0,lon0,dico_nodes,dico_edges)
-    print("     Removal of obsolete edges,")
-    dico_edges_tmp = {}
-    for edge in dico_edges:
-        [initpt, endpt] = edge.split('|')
-        if initpt != endpt:
-            dico_edges_tmp[edge] = dico_edges[edge]
-        else:
-            print("one removed edge : " + str(initpt))
-    dico_edges = dico_edges_tmp
-    print("     Removal of obsolete nodes,")
-    final_nodes = {}
-    for edge in dico_edges:
-        # print(edge)
-        [initpt, endpt] = edge.split('|')
-        final_nodes[initpt] = dico_nodes[initpt]
-        final_nodes[endpt] = dico_nodes[endpt]
-    dico_nodes = final_nodes
-    print("-> Transcription of the data to the file " + poly_file)
-    write_poly_file(poly_file, airport_file, lat0, lon0, dico_nodes, dico_edges, water_seeds, sea_seeds,
-                    sea_equiv_seeds,
-                    flat_airport_seeds, flat_patch_seeds, sloped_patch_seeds, alt_seeds, hole_seeds)
-
-    print('\nCompleted in ' + str('{:.2f}'.format(time.time() - t1)) +
-          'sec.')
-    print('_____________________________________________________________' +
-          '____________________________________')
-    return
+    # TODO: find out why this is commented, and where to keep it
+    # # Don't go further now !
+    # t1 = time.time()
+    # if not os.path.exists(build_dir):
+    #     os.makedirs(build_dir)
+    # strlat = '{:+.0f}'.format(lat0).zfill(3)
+    # strlon = '{:+.0f}'.format(lon0).zfill(4)
+    # poly_file = build_dir + dir_sep + 'Data' + strlat + strlon + '.poly'
+    # airport_file = build_dir + dir_sep + 'Data' + strlat + strlon + '.apt'
+    # patch_dir = Ortho4XP_dir + dir_sep + 'Patches' + dir_sep + strlat + strlon
+    # dico_nodes = {}
+    # dico_edges = {}
+    # dico_edges_water = {}
+    # water_seeds = []
+    # sea_seeds = []
+    # sea_equiv_seeds = []
+    # flat_airport_seeds = []
+    # flat_patch_seeds = []
+    # sloped_patch_seeds = []
+    # alt_seeds = []
+    #
+    # zone_list = []  # !!!!!!!!!!!!!!!!!!!!!!!!
+    # poly_list = [region[0] for region in zone_list]
+    # bbox_list = [compute_bbox(poly) for poly in poly_list]
+    # print("-> Analyzing patch data ")
+    # include_patch_data(lat0, lon0, patch_dir, dico_nodes, dico_edges, flat_patch_seeds, sloped_patch_seeds, alt_seeds,
+    #                    poly_list, bbox_list)
+    # print(poly_list)
+    # print("-> Analyzing input landclass mesh ")
+    # (tri_list, ter_list, tri_list_kept, hole_seeds, textures) = read_dsf(lat0, lon0, build_dir, file_to_sniff,
+    #                                                                      poly_list, bbox_list, dem_alternative)
+    # return textures
+    # # hole_seeds=[]
+    # print("tri_list :", len(tri_list))
+    # print("ter_list :", len(ter_list))
+    #
+    # # for key in tri_list_kept:
+    # #    try:
+    # #        print(key)
+    # #        print(len(tri_list_kept[key]))
+    # #        print(' ')
+    # #    except:
+    # #        pass
+    # # print("-> Computing splitting edges and building raster landclass map ")
+    # # tri_list=split_mesh_according_to_poly_list(lat0,lon0,triangles,poly_list,bbox_list)
+    # print("-> Building poly file for Triangle4XP ")
+    # ttest = time.time()
+    # for tri, ter in zip(tri_list, ter_list):
+    #     node1 = ['{:.6f}'.format(tri[0][1]), '{:.6f}'.format(tri[0][0])]  # i.e. [lat,lon]
+    #     node2 = ['{:.6f}'.format(tri[1][1]), '{:.6f}'.format(tri[1][0])]  # i.e. [lat,lon]
+    #     node3 = ['{:.6f}'.format(tri[2][1]), '{:.6f}'.format(tri[2][0])]  # i.e. [lat,lon]
+    #     keep_node(node1, lat0, lon0, dico_nodes, tri[0][2])
+    #     keep_node(node2, lat0, lon0, dico_nodes, tri[1][2])
+    #     keep_node(node3, lat0, lon0, dico_nodes, tri[2][2])
+    #     keep_edge_unique(node1, node2, 'inner', dico_edges)
+    #     keep_edge_unique(node2, node3, 'inner', dico_edges)
+    #     keep_edge_unique(node3, node1, 'inner', dico_edges)
+    #     if ter == 0:  # water
+    #         keep_edge(node1, node2, 'inner', dico_edges_water)
+    #         keep_edge(node2, node3, 'inner', dico_edges_water)
+    #         keep_edge(node3, node1, 'inner', dico_edges_water)
+    #         # if tri[3]==0: # terrain_Water
+    #         #    tri_bary=[(tri[0][0]+tri[1][0]+tri[2][0])/3,(tri[0][1]+tri[1][1]+tri[2][1])/3]
+    #         #    water_seeds.append(tri_bary)
+    # for edge in dico_edges_water:
+    #     node0 = edge.split('|')[0].split('_')
+    #     node1 = edge.split('|')[1].split('_')
+    #     keep_edge(node0, node1, 'inner', dico_edges)
+    # print("time to keep edges : ", time.time() - ttest)
+    #
+    # # if zone_list != []:
+    # #    print("-> Adding of edges related to the orthophoto grid and computation of\n"
+    # #          "     their intersections with OSM edges,")
+    # #    dico_edges=cut_edges_with_grid(lat0,lon0,dico_nodes,dico_edges)
+    # print("     Removal of obsolete edges,")
+    # dico_edges_tmp = {}
+    # for edge in dico_edges:
+    #     [initpt, endpt] = edge.split('|')
+    #     if initpt != endpt:
+    #         dico_edges_tmp[edge] = dico_edges[edge]
+    #     else:
+    #         print("one removed edge : " + str(initpt))
+    # dico_edges = dico_edges_tmp
+    # print("     Removal of obsolete nodes,")
+    # final_nodes = {}
+    # for edge in dico_edges:
+    #     # print(edge)
+    #     [initpt, endpt] = edge.split('|')
+    #     final_nodes[initpt] = dico_nodes[initpt]
+    #     final_nodes[endpt] = dico_nodes[endpt]
+    # dico_nodes = final_nodes
+    # print("-> Transcription of the data to the file " + poly_file)
+    # write_poly_file(poly_file, airport_file, lat0, lon0, dico_nodes, dico_edges, water_seeds, sea_seeds,
+    #                 sea_equiv_seeds,
+    #                 flat_airport_seeds, flat_patch_seeds, sloped_patch_seeds, alt_seeds, hole_seeds)
+    #
+    # print('\nCompleted in ' + str('{:.2f}'.format(time.time() - t1)) +
+    #       'sec.')
+    # print('_____________________________________________________________' +
+    #       '____________________________________')
 
 
 ##############################################################################
@@ -489,17 +487,16 @@ def build_poly_file(lat0, lon0, option, build_dir, airport_website=default_websi
         except:
             pass
         subtags = tag.split('"')
-        osm_filename = Ortho4XP_dir + dir_sep + "OSM_data" + dir_sep + strlat + strlon + dir_sep + strlat + strlon + '_' + \
-                       subtags[0][0:-1] + '_' + \
-                       subtags[1] + '_' + subtags[3] + '.osm'
-        osm_errors_filename = Ortho4XP_dir + dir_sep + "OSM_data" + dir_sep + strlat + strlon + dir_sep + strlat + strlon + '_' + \
-                              subtags[0][0:-1] + '_' + \
-                              subtags[1] + '_' + subtags[3] + '_detected_errors.txt'
+        osm_basename = strlat + strlon + '_' + subtags[0][0:-1] + '_' + subtags[1] + '_' + subtags[3]
+        osm_filename = os.path.join(Ortho4XP_dir, "OSM_data", strlat + strlon,
+                                    osm_basename + '.osm')
+        osm_errors_filename = os.path.join(Ortho4XP_dir, "OSM_data", strlat + strlon,
+                                           osm_basename + '_detected_errors.txt')
         if not os.path.isfile(osm_filename):
             print("    Obtaining OSM data for " + tag)
             s = requests.Session()
             osm_download_ok = False
-            while osm_download_ok != True:
+            while not osm_download_ok:
                 url = overpass_server_list[overpass_server_choice] + "?data=(" + tag + "(" + str(lat0) + "," + str(
                     lon0) + "," + str(lat0 + 1) + "," + str(lon0 + 1) + "););(._;>>;);out meta;"
                 r = s.get(url)
@@ -540,29 +537,28 @@ def build_poly_file(lat0, lon0, option, build_dir, airport_website=default_websi
                     keep_that_one = True
                     if (wayid in dicosmw_icao) and (wayid in dicosmw_name):
                         print("       * " + dicosmw_icao[wayid] + " " + dicosmw_name[wayid])
-                    elif (wayid in dicosmw_icao):
+                    elif wayid in dicosmw_icao:
                         print("       * " + dicosmw_icao[wayid])
-                    elif (wayid in dicosmw_name):
+                    elif wayid in dicosmw_name:
                         print("       *      " + dicosmw_name[wayid])
                     else:
                         print("       * lat=" + str(way[0][0]) + " lon=" + str(way[0][1]))
-                    if (wayid in dicosmw_ele):
+                    if wayid in dicosmw_ele:
                         altitude = dicosmw_ele[wayid]
                     else:
                         altitude = 'unknown'
-                    if (wayid in dicosmw_icao):
-                        if (dicosmw_icao[wayid] in sloped_airports_list) or (
-                            dicosmw_icao[wayid] in do_not_flatten_these_list):
+                    if wayid in dicosmw_icao:
+                        if (dicosmw_icao[wayid] in sloped_airports_list) or \
+                           (dicosmw_icao[wayid] in do_not_flatten_these_list):
                             print("          I will not flatten " + dicosmw_icao[wayid] + " airport.")
                             keep_that_one = False
-                    if keep_that_one == True:
-                        keep_way(way, lat0, lon0, 1, 'airport', dico_nodes,
-                                 dico_edges)
-                        flat_airport_seeds.append([way,
-                                                   pick_point_check(way, side, lat0, lon0), altitude])
+                    if keep_that_one:
+                        keep_way(way, lat0, lon0, 1, 'airport', dico_nodes, dico_edges)
+                        flat_airport_seeds.append([way, pick_point_check(way, side, lat0, lon0), altitude])
                 else:
-                    print("One of the airports within the tile is not correctly closed \n" + \
+                    print("One of the airports within the tile is not correctly closed \n" +
                           "on Openstreetmap ! Close to coordinates " + str(way[0]))
+
         elif tag == 'rel["aeroway"="aerodrome"]':
             sloped_airports_list = []
             if os.path.exists(patch_dir):
@@ -571,21 +567,21 @@ def build_poly_file(lat0, lon0, option, build_dir, airport_website=default_websi
                         sloped_airports_list.append(pfilename[:4])
             for relid in dicosmr:
                 keep_that_one = True
-                if (relid in dicosmr_icao):
-                    if dicosmr_icao[relid] in sloped_airports_list or (
-                        dicosmr_icao[relid] in do_not_flatten_these_list):
+                if relid in dicosmr_icao:
+                    if (dicosmr_icao[relid] in sloped_airports_list) or \
+                       (dicosmr_icao[relid] in do_not_flatten_these_list):
                         keep_that_one = False
                 if (relid in dicosmr_icao) and (relid in dicosmr_name):
                     print("       * " + dicosmr_icao[relid] + " " + dicosmr_name[relid])
-                elif (relid in dicosmr_icao):
+                elif relid in dicosmr_icao:
                     print("       * " + dicosmr_icao[relid])
                 elif relid in dicosmr_name:
                     print("       *      " + dicosmr_name[relid])
-                if (relid in dicosmr_ele):
+                if relid in dicosmr_ele:
                     altitude = dicosmr_ele[relid]
                 else:
                     altitude = 'unknown'
-                if keep_that_one == False:
+                if not keep_that_one:
                     continue
                 for waypts in dicosmrinner[relid]:
                     keep_way(waypts, lat0, lon0, 1, 'airport', dico_nodes,
@@ -600,6 +596,7 @@ def build_poly_file(lat0, lon0, option, build_dir, airport_website=default_websi
                              dico_edges)
                     flat_airport_seeds.append([waypts,
                                                pick_point_check(waypts, side, lat0, lon0), altitude])
+
         elif 'way["natural"="coastline"]' in tag:
             total_sea_seeds = 0
             for wayid in dicosmw:
@@ -607,7 +604,7 @@ def build_poly_file(lat0, lon0, option, build_dir, airport_website=default_websi
                 # Openstreetmap ask that sea is to the right of oriented
                 # coastline. We trust OSM contributors...
                 if strcode(way[0]) != strcode(way[-1]):
-                    if (lat0 >= 40 and lat0 <= 49 and lon0 >= -93 and lon0 <= -76):
+                    if (40 <= lat0 <= 49) and (-93 <= lon0 <= -76):
                         sea_equiv_seeds += pick_points_safe(way, 'right', lat0, lon0)
                     else:
                         sea_seeds += pick_points_safe(way, 'right', lat0, lon0)
@@ -617,12 +614,13 @@ def build_poly_file(lat0, lon0, option, build_dir, airport_website=default_websi
                 for wayid in dicosmw:
                     way = dicosmw[wayid]
                     if strcode(way[0]) == strcode(way[-1]):
-                        if (lat0 >= 40 and lat0 <= 49 and lon0 >= -93 and lon0 <= -76):
+                        if (40 <= lat0 <= 49) and (-93 <= lon0 <= -76):
                             sea_equiv_seeds += pick_points_safe(way, 'right', lat0, lon0)
                         else:
                             sea_seeds += pick_points_safe(way, 'right', lat0, lon0)
-        elif ('way["natural"="water"]' in tag) or ('way["waterway"="riverbank"]' in tag) or (
-            'way["waterway"="dock"]' in tag):
+
+        elif ('way["natural"="water"]' in tag) or ('way["waterway"="riverbank"]' in tag) or \
+             ('way["waterway"="dock"]' in tag):
             efile = open(osm_errors_filename, 'w')
             osm_errors_found = False
             for wayid in dicosmw:
@@ -652,7 +650,7 @@ def build_poly_file(lat0, lon0, option, build_dir, airport_website=default_websi
                                 sea_way = True
                         except:
                             pass
-                        if sea_way != True:
+                        if not sea_way:
                             water_seeds += points_checked
                         else:
                             sea_equiv_seeds += points_checked
@@ -662,6 +660,7 @@ def build_poly_file(lat0, lon0, option, build_dir, airport_website=default_websi
                     "     !!!Some OSM errors were detected!!!\n        They are listed in " + str(osm_errors_filename))
             else:
                 os.remove(osm_errors_filename)
+
         elif 'rel[' in tag:
             for relid in dicosmr:
                 sea_rel = False
@@ -684,7 +683,7 @@ def build_poly_file(lat0, lon0, option, build_dir, airport_website=default_websi
                         keep_way(waypts, lat0, lon0, 1, 'outer', dico_nodes,
                                  dico_edges)
                         points_checked = pick_points_safe(waypts, side, lat0, lon0, check=True)
-                        if sea_rel != True:
+                        if not sea_rel:
                             water_seeds += points_checked
                         else:
                             sea_equiv_seeds += points_checked
@@ -757,7 +756,9 @@ def build_poly_file(lat0, lon0, option, build_dir, airport_website=default_websi
                     flat_airport_seeds, flat_patch_seeds, sloped_patch_seeds, alt_seeds)
     # adding airports high zl zone to zone_list if needed
     try:
-        if cover_airports_with_highres == True:  # and (zone_list==[] or (zone_list[-1][0][0]==zone_list[-1][0][2]==zone_list[-1][0][8])):  # i.e. airports claimed but not already in zone_list (since write_cfg puts them there)
+        # and (zone_list==[] or (zone_list[-1][0][0]==zone_list[-1][0][2]==zone_list[-1][0][8])):  # i.e. airports
+        # claimed but not already in zone_list (since write_cfg puts them there)
+        if cover_airports_with_highres:
             filed_some = False
             with open(build_dir + dir_sep + "Data" + strlat + strlon + '.apt') as fapt:
                 for line in fapt:
@@ -799,12 +800,7 @@ def build_poly_file(lat0, lon0, option, build_dir, airport_website=default_websi
     print('_____________________________________________________________' + \
           '____________________________________')
 
-    return
 
-
-#############################################################################
-
-#############################################################################
 def write_poly_file(poly_file, airport_file, lat0, lon0, dico_nodes, dico_edges,
                     water_seeds, sea_seeds, sea_equiv_seeds, flat_airport_seeds,
                     flat_patch_seeds, sloped_patch_seeds, alt_seeds, hole_seeds=None):
@@ -816,7 +812,7 @@ def write_poly_file(poly_file, airport_file, lat0, lon0, dico_nodes, dico_edges,
     for key in dico_nodes:
         dico_node_pos[key] = idx
         [x, y] = xycoords(key, lat0, lon0)
-        f.write(str(idx) + ' ' + str(x) + ' ' + \
+        f.write(str(idx) + ' ' + str(x) + ' ' +
                 str(y) + ' ' + str(dico_nodes[key]) + '\n')
         idx += 1
     f.write('\n')
@@ -827,10 +823,10 @@ def write_poly_file(poly_file, airport_file, lat0, lon0, dico_nodes, dico_edges,
         [code1, code2] = edge.split('|')
         idx1 = dico_node_pos[code1]
         idx2 = dico_node_pos[code2]
-        f.write(str(idx) + ' ' + str(idx1) + ' ' + str(idx2) + ' ' + \
+        f.write(str(idx) + ' ' + str(idx1) + ' ' + str(idx2) + ' ' +
                 dico_edge_markers[dico_edges[edge]] + '\n')
         idx += 1
-    if hole_seeds == None or len(hole_seeds) == 0:
+    if hole_seeds is None or len(hole_seeds) == 0:
         f.write('\n0\n')
     else:
         nbr_hole_seeds = len(hole_seeds)
@@ -839,9 +835,9 @@ def write_poly_file(poly_file, airport_file, lat0, lon0, dico_nodes, dico_edges,
         for seed in hole_seeds:
             f.write(str(idx) + ' ' + str(seed[1] - lon0) + ' ' + str(seed[0] - lat0) + '\n')
             idx += 1
-    total_seeds = len(water_seeds) + len(sea_seeds) + len(sea_equiv_seeds) + \
-                  len(flat_airport_seeds) + len(flat_patch_seeds) + \
-                  len(sloped_patch_seeds) + len(alt_seeds)
+    total_seeds = (len(water_seeds) + len(sea_seeds) + len(sea_equiv_seeds) +
+                   len(flat_airport_seeds) + len(flat_patch_seeds) +
+                   len(sloped_patch_seeds) + len(alt_seeds))
     if total_seeds == 0:
         print("-> No OSM data for this tile, loading altitude data to decide between sea or land.")
         [alt_dem, ndem] = load_altitude_matrix(lat0, lon0)
@@ -856,40 +852,40 @@ def write_poly_file(poly_file, airport_file, lat0, lon0, dico_nodes, dico_edges,
     f.write('\n' + str(total_seeds) + ' 1\n')
     idx = 1
     for seed in water_seeds:
-        f.write(str(idx) + ' ' + str(seed[0] - lon0) + ' ' + str(seed[1] - lat0) + ' ' + \
+        f.write(str(idx) + ' ' + str(seed[0] - lon0) + ' ' + str(seed[1] - lat0) + ' ' +
                 dico_tri_markers['water'] + '\n')
         idx += 1
     for seed in sea_seeds:
-        f.write(str(idx) + ' ' + str(seed[0] - lon0) + ' ' + str(seed[1] - lat0) + ' ' + \
+        f.write(str(idx) + ' ' + str(seed[0] - lon0) + ' ' + str(seed[1] - lat0) + ' ' +
                 dico_tri_markers['sea'] + '\n')
         idx += 1
     for seed in sea_equiv_seeds:
-        f.write(str(idx) + ' ' + str(seed[0] - lon0) + ' ' + str(seed[1] - lat0) + ' ' + \
+        f.write(str(idx) + ' ' + str(seed[0] - lon0) + ' ' + str(seed[1] - lat0) + ' ' +
                 dico_tri_markers['sea_equiv'] + '\n')
         idx += 1
     for seed in alt_seeds:
-        f.write(str(idx) + ' ' + str(seed[0] - lon0) + ' ' + str(seed[1] - lat0) + ' ' + \
+        f.write(str(idx) + ' ' + str(seed[0] - lon0) + ' ' + str(seed[1] - lat0) + ' ' +
                 dico_tri_markers['altitude'] + '\n')
         idx += 1
     apt_idx = 100
     for seed in flat_airport_seeds:
-        f.write(str(idx) + ' ' + str(seed[1][0] - lon0) + ' ' + \
+        f.write(str(idx) + ' ' + str(seed[1][0] - lon0) + ' ' +
                 str(seed[1][1] - lat0) + ' ' + str(apt_idx) + '\n')
         apt_idx += 1
         idx += 1
     fp_idx = 1000
     for seed in flat_patch_seeds:
-        f.write(str(idx) + ' ' + str(seed[0][0]) + ' ' + \
+        f.write(str(idx) + ' ' + str(seed[0][0]) + ' ' +
                 str(seed[0][1]) + ' ' + str(fp_idx) + '\n')
         fp_idx += 1
         idx += 1
     sp_idx = 10000
     for seed in sloped_patch_seeds:
-        f.write(str(idx) + ' ' + str(seed[0][0]) + ' ' + str(seed[0][1]) + ' ' + \
+        f.write(str(idx) + ' ' + str(seed[0][0]) + ' ' + str(seed[0][1]) + ' ' +
                 str(sp_idx) + '\n')
         sp_idx += 1
         idx += 1
-    print("   Remain " + str(len(dico_edges)) + \
+    print("   Remain " + str(len(dico_edges)) +
           " edges in total.")
     f.close()
     f = open(airport_file, "w")
@@ -897,7 +893,7 @@ def write_poly_file(poly_file, airport_file, lat0, lon0, dico_nodes, dico_edges,
     fp_idx = 1000
     sp_idx = 10000
     for seed in flat_airport_seeds:
-        f.write("Airport " + str(apt_idx) + " : " + str(len(seed[0])) + \
+        f.write("Airport " + str(apt_idx) + " : " + str(len(seed[0])) +
                 " nodes.\n")
         f.write("Elevation " + str(seed[2]) + '\n')
         for node in seed[0]:
@@ -915,18 +911,14 @@ def write_poly_file(poly_file, airport_file, lat0, lon0, dico_nodes, dico_edges,
         fp_idx += 1
     f.write('\n')
     for seed in sloped_patch_seeds:
-        f.write("Sloped_patch " + str(sp_idx) + " : " + str(seed[1]) + " " + \
-                str(seed[2]) + " " + str(seed[3]) + " " + str(seed[4]) + " " + \
-                str(seed[5]) + " " + str(seed[6]) + " " + str(seed[7]) + " " + \
+        f.write("Sloped_patch " + str(sp_idx) + " : " + str(seed[1]) + " " +
+                str(seed[2]) + " " + str(seed[3]) + " " + str(seed[4]) + " " +
+                str(seed[5]) + " " + str(seed[6]) + " " + str(seed[7]) + " " +
                 str(seed[8]) + " " + str(seed[9]) + "\n")
         sp_idx += 1
     f.close()
-    return
 
 
-##############################################################################
-
-##############################################################################
 def osmway_to_dicos(osm_filename):
     pfile = open(osm_filename, 'r', encoding="utf-8")
     dicosmn = {}
@@ -941,7 +933,7 @@ def osmway_to_dicos(osm_filename):
         separator = "'"
     else:
         separator = '"'
-    while not finished_with_file == True:
+    while not finished_with_file:
         items = pfile.readline().split(separator)
         if '<node id=' in items[0]:
             id = items[1]
@@ -976,10 +968,6 @@ def osmway_to_dicos(osm_filename):
     return [dicosmw, dicosmw_name, dicosmw_icao, dicosmw_ele]
 
 
-##############################################################################
-
-
-##############################################################################
 def osmrel_to_dicos(osm_filename, osm_errors_filename):
     pfile = open(osm_filename, 'r', encoding="utf-8")
     efile = open(osm_errors_filename, 'w')
@@ -1000,7 +988,7 @@ def osmrel_to_dicos(osm_filename, osm_errors_filename):
         separator = "'"
     else:
         separator = '"'
-    while not finished_with_file == True:
+    while not finished_with_file:
         items = pfile.readline().split(separator)
         if '<node id=' in items[0]:
             id = items[1]
@@ -1069,7 +1057,7 @@ def osmrel_to_dicos(osm_filename, osm_errors_filename):
                 if len(dicoendpt[endpt]) != 2:
                     bad_rel = True
                     break
-            if bad_rel == True:
+            if bad_rel:
                 efile.write("Relation id=" + str(relid) + " is ill formed and was not treated.\n")
                 osm_errors_found = True
                 dicosmr.pop(relid, 'None')
@@ -1116,37 +1104,22 @@ def osmrel_to_dicos(osm_filename, osm_errors_filename):
     return [dicosmr, dicosmrinner, dicosmrouter, dicosmr_name, dicosmr_icao, dicosmr_ele]
 
 
-##############################################################################
-
-#############################################################################
 def strcode(node):
     return '{:.9f}'.format(float(node[0])) + '_' + '{:.9f}'.format(float(node[1]))
 
 
-#############################################################################
-
-
-#############################################################################
 def keep_node(node, lat0, lon0, dico_nodes, attribute=-32768):
     dico_nodes[strcode(node)] = attribute
-    return
 
 
-#############################################################################
-
-#############################################################################
 def keep_edge(node0, node, marker, dico_edges):
     if strcode(node0) != strcode(node):
         if strcode(node) + '|' + strcode(node0) in dico_edges:
             dico_edges[strcode(node) + '|' + strcode(node0)] = marker
         else:
             dico_edges[strcode(node0) + '|' + strcode(node)] = marker
-    return
 
 
-#############################################################################
-
-#############################################################################
 def keep_edge_unique(node0, node, marker, dico_edges):
     if strcode(node0) == strcode(node):
         return
@@ -1157,12 +1130,8 @@ def keep_edge_unique(node0, node, marker, dico_edges):
         dico_edges.pop(strcode(node) + '|' + strcode(node0), None)
         return
     dico_edges[strcode(node0) + '|' + strcode(node)] = marker
-    return
 
 
-#############################################################################
-
-#############################################################################
 def keep_edge_str(strcode1, strcode2, marker, dico_edges, overwrite=True):
     if overwrite:
         if strcode2 + '|' + strcode1 in dico_edges:
@@ -1171,14 +1140,8 @@ def keep_edge_str(strcode1, strcode2, marker, dico_edges, overwrite=True):
             dico_edges[strcode1 + '|' + strcode2] = marker
     elif (strcode2 + '|' + strcode1 not in dico_edges) and (strcode1 + '|' + strcode2 not in dico_edges):
         dico_edges[strcode1 + '|' + strcode2] = marker
-    return
 
 
-#############################################################################
-
-
-
-#############################################################################
 def keep_way(way, lat0, lon0, sign, marker, dico_nodes, dico_edges, attribute=-32768):
     if sign == 1:
         node0 = way[0]
@@ -1194,49 +1157,32 @@ def keep_way(way, lat0, lon0, sign, marker, dico_nodes, dico_edges, attribute=-3
             keep_node(node, lat0, lon0, dico_nodes, attribute)
             keep_edge(node0, node, marker, dico_edges)
             node0 = node
-    return
 
 
-#############################################################################
-
-#############################################################################
 def strxy(x, y, lat0, lon0):
     return '{:.9f}'.format(y + lat0) + '_' + '{:.9f}'.format(x + lon0)
     # return str(y+lat0)+'_'+str(x+lon0)
 
 
-#############################################################################
-
-#############################################################################
 def keep_node_xy(x, y, lat0, lon0, dico_nodes, attribute=-32768):
     dico_nodes[strxy(x, y, lat0, lon0)] = attribute
     return
 
 
-#############################################################################
-
-#############################################################################
 def xycoords(strcode, lat0, lon0):
     [slat, slon] = strcode.split('_')
     return [float('{:.9f}'.format(float(slon) - lon0)), float('{:.9f}'.format(float(slat) - lat0))]
 
 
-#############################################################################
-
-
-
-#############################################################################
 def keep_edge_str_tmp(strcode1, strcode2, marker, dico_edges_tmp):
     dico_edges_tmp[strcode1 + '|' + strcode2] = marker
     return
 
 
-#############################################################################
-
-#############################################################################
 def include_patch_data(lat0, lon0, patch_dir, dico_nodes, dico_edges, flat_patch_seeds, sloped_patch_seeds, alt_seeds,
                        poly_list=None, bbox_list=None):
-    if not os.path.exists(patch_dir): return
+    if not os.path.exists(patch_dir):
+        return
     for pfilename in os.listdir(patch_dir):
         if pfilename[-10:] != '.patch.osm':
             continue
@@ -1265,10 +1211,10 @@ def include_patch_data(lat0, lon0, patch_dir, dico_nodes, dico_edges, flat_patch
                             slon = item[5:-1]
                     dico_nodes[strcode([slat, slon])] = -32768  # [float(slon)-lon0,float(slat)-lat0]
                     nodes_codes[id] = strcode([slat, slon])  # slat+'_'+slon
-                elif started_with_nodes == True:
+                elif started_with_nodes:
                     finished_with_nodes = True
             finished_with_ways = False
-            while finished_with_ways != True:
+            while not finished_with_ways:
                 newwaycodes = []
                 finished_with_newway = False
                 flat_patch = False
@@ -1276,7 +1222,7 @@ def include_patch_data(lat0, lon0, patch_dir, dico_nodes, dico_edges, flat_patch
                 way_profile = 'plane'
                 way_steepness = '3.5'
                 way_cell_size = '5'
-                while finished_with_newway != True:
+                while not finished_with_newway:
                     line = pfile.readline().split()
                     if '<nd' in line:
                         newnodeid = line[1][4:]
@@ -1309,10 +1255,11 @@ def include_patch_data(lat0, lon0, patch_dir, dico_nodes, dico_edges, flat_patch
                             finished_with_newway = True
                         else:
                             pass
-                if flat_patch == True:
+
+                if flat_patch:
                     seed = keep_patch(newwaycodes, lat0, lon0, dico_edges)
                     flat_patch_seeds.append([seed, way_altitude, newwaycodes])
-                elif sloped_patch == True:
+                elif sloped_patch:
                     [seed, xi, yi, xf, yf] = keep_sloped_patch(newwaycodes,
                                                                float(way_cell_size) / 100000, dico_nodes,
                                                                dico_edges, lat0, lon0)
@@ -1321,6 +1268,7 @@ def include_patch_data(lat0, lon0, patch_dir, dico_nodes, dico_edges, flat_patch
                                                way_profile, way_steepness, way_cell_size])
                 else:
                     seed = keep_patch(newwaycodes, lat0, lon0, dico_edges)
+
                 if poly_list is not None:
                     way_poly = []
                     for strnode in newwaycodes:
@@ -1342,18 +1290,18 @@ def include_patch_data(lat0, lon0, patch_dir, dico_nodes, dico_edges, flat_patch
             pfile.seek(0)
             finished_with_nodes = False
             started_with_nodes = False
-            while not finished_with_nodes == True:
+            while not finished_with_nodes:
                 items = pfile.readline().split()
                 if '<node' in items:
                     started_with_nodes = True
-                elif started_with_nodes == True:
+                elif started_with_nodes:
                     finished_with_nodes = True
             finished_with_ways = False
-            while finished_with_ways != True:
+            while not finished_with_ways:
                 newwaycodes = []
                 finished_with_newway = False
                 sloped_patch = False
-                while finished_with_newway != True:
+                while not finished_with_newway:
                     line = pfile.readline().split()
                     if '<nd' in line:
                         newnodeid = line[1][4:]
@@ -1365,7 +1313,7 @@ def include_patch_data(lat0, lon0, patch_dir, dico_nodes, dico_edges, flat_patch
                             finished_with_newway = True
                         else:
                             pass
-                if sloped_patch == True:
+                if sloped_patch:
                     dico_edges.pop(newwaycodes[0] + '|' + newwaycodes[3], None)
                     dico_edges.pop(newwaycodes[3] + '|' + newwaycodes[0], None)
                     dico_edges.pop(newwaycodes[1] + '|' + newwaycodes[2], None)
@@ -1389,7 +1337,7 @@ def include_patch_data(lat0, lon0, patch_dir, dico_nodes, dico_edges, flat_patch
             except:
                 continue
             firstline = pfile.readline()
-            if not 'ANCHOR' in firstline:
+            if 'ANCHOR' not in firstline:
                 print("Objetc ", pfilename, " is missing and ANCHOR in first line, skipping")
                 continue
             pfile.close()
@@ -1411,12 +1359,8 @@ def include_patch_data(lat0, lon0, patch_dir, dico_nodes, dico_edges, flat_patch
         if (bbox != [90, -90, 180, -180]) and (poly_list is not None):
             bbox_list.append([bbox[0] - 0.01, bbox[1] + 0.01, bbox[2] - 0.01, bbox[3] + 0.01])
             poly_list.append([bbox[0], bbox[2], bbox[0], bbox[3], bbox[1], bbox[3], bbox[1], bbox[2], bbox[0], bbox[2]])
-    return
 
 
-#############################################################################
-
-#############################################################################
 def keep_patch(newwaycodes, lat0, lon0, dico_edges):
     for i in range(0, len(newwaycodes) - 1):
         dico_edges[newwaycodes[i] + '|' + newwaycodes[i + 1]] = 'patch'
@@ -1428,24 +1372,20 @@ def keep_patch(newwaycodes, lat0, lon0, dico_edges):
                (newway[1] + newway[3]) / 2.0 - eps * (newway[2] - newway[0])]
     testpt2 = [(newway[0] + newway[2]) / 2.0 - eps * (newway[3] - newway[1]),
                (newway[1] + newway[3]) / 2.0 + eps * (newway[2] - newway[0])]
-    if point_in_polygon(testpt1, newway) == True:
+    if point_in_polygon(testpt1, newway):
         return testpt1
     else:
         return testpt2
 
 
-#############################################################################
-
-
-#############################################################################
 def keep_sloped_patch(waycodes, cell_size, dico_nodes, dico_edges, lat0, lon0):
     way = []
     sdn = {}
     for node_code in waycodes:
         way += xycoords(node_code, lat0, lon0)
-    approx_length = sqrt((way[0] - way[2]) ** 2 * cos(lat0 * pi / 180) ** 2 + \
+    approx_length = sqrt((way[0] - way[2]) ** 2 * cos(lat0 * pi / 180) ** 2 +
                          (way[1] - way[3]) ** 2)
-    approx_width = sqrt((way[0] - way[6]) ** 2 * cos(lat0 * pi / 180) ** 2 + \
+    approx_width = sqrt((way[0] - way[6]) ** 2 * cos(lat0 * pi / 180) ** 2 +
                         (way[1] - way[7]) ** 2)
     Nx = ceil(approx_width / cell_size)
     Ny = ceil(approx_length / cell_size)
@@ -1490,7 +1430,7 @@ def keep_sloped_patch(waycodes, cell_size, dico_nodes, dico_edges, lat0, lon0):
                (way[1] + way[3]) / 2.0 - eps * (way[2] - way[0])]
     testpt2 = [(way[0] + way[2]) / 2.0 - eps * (way[3] - way[1]),
                (way[1] + way[3]) / 2.0 + eps * (way[2] - way[0])]
-    if point_in_polygon(testpt1, way) == True:
+    if point_in_polygon(testpt1, way):
         return [testpt1, (way[0] + way[6]) / 2.0, (way[1] + way[7]) / 2.0,
                 (way[2] + way[4]) / 2.0, (way[3] + way[5]) / 2.0]
     else:
@@ -1498,9 +1438,6 @@ def keep_sloped_patch(waycodes, cell_size, dico_nodes, dico_edges, lat0, lon0):
                 (way[2] + way[4]) / 2.0, (way[3] + way[5]) / 2.0]
 
 
-#############################################################################
-
-#############################################################################
 def keep_obj8(lat, lon, lat_anchor, lon_anchor, alt_anchor, heading_anchor, objfilename, dico_nodes, dico_edges,
               alt_seeds):
     dico_idx_nodes = {}
@@ -1573,9 +1510,6 @@ def keep_obj8(lat, lon, lat_anchor, lon_anchor, alt_anchor, heading_anchor, objf
     return [latmin, latmax, lonmin, lonmax]
 
 
-#############################################################################
-
-#############################################################################
 def cut_edges_with_zone(lat0, lon0, dico_nodes, dico_edges, zone_list):
     for zone in zone_list:
         zone = zone[0]
@@ -1585,9 +1519,6 @@ def cut_edges_with_zone(lat0, lon0, dico_nodes, dico_edges, zone_list):
     return dico_edges
 
 
-#############################################################################
-
-#############################################################################
 def insert_edge(new_edge, dico_nodes, dico_edges, tag):
     dico_edges_tmp = {}
     [lata, lona, latb, lonb] = new_edge
@@ -1621,8 +1552,10 @@ def insert_edge(new_edge, dico_nodes, dico_edges, tag):
     # now we encode the (possibly splitted) new edge
     strcodeinit = strcode([str(lata), str(lona)])
     strcodeend = strcode([str(latb), str(lonb)])
-    if strcodeinit not in dico_nodes: dico_nodes[strcodeinit] = -32768
-    if strcodeend not in dico_nodes: dico_nodes[strcodeend] = -32768
+    if strcodeinit not in dico_nodes:
+        dico_nodes[strcodeinit] = -32768
+    if strcodeend not in dico_nodes:
+        dico_nodes[strcodeend] = -32768
     alpha_list += [0, 1]
     alpha_list = sorted(set(alpha_list))
     for k in range(0, len(alpha_list) - 1):
@@ -1638,9 +1571,6 @@ def insert_edge(new_edge, dico_nodes, dico_edges, tag):
     return dico_edges_tmp
 
 
-#############################################################################
-
-#############################################################################
 def cut_edges_with_grid(lat0, lon0, dico_nodes, dico_edges):
     dico_edges_tmp = {}
     xgrid = []  # x coordinates of vertical grid lines
@@ -1663,16 +1593,16 @@ def cut_edges_with_grid(lat0, lon0, dico_nodes, dico_edges):
         pos_x = (til_x / (2 ** (meshzl - 1)) - 1)
         xgrid.append(pos_x * 180 - lon0 + 0.0)
     for til_y in range(int(til_yul), int(til_ylr + 1), 16):
-        pos_y = (1 - (til_y) / (2 ** (meshzl - 1)))
+        pos_y = (1 - til_y / (2 ** (meshzl - 1)))
         ygrid = [360 / pi * atan(exp(pi * pos_y)) - 90 - lat0 + 0.0] + ygrid
     if 0.0 not in xgrid:
         xgrid = [0.0] + xgrid
     if 1.0 not in xgrid:
-        xgrid = xgrid + [1.0]
+        xgrid += [1.0]
     if 0.0 not in ygrid:
         ygrid = [0.0] + ygrid
     if 1.0 not in ygrid:
-        ygrid = ygrid + [1.0]
+        ygrid += [1.0]
     # encoding nodes corresponding to grid points
     for x in xgrid:
         for y in ygrid:
@@ -1689,20 +1619,20 @@ def cut_edges_with_grid(lat0, lon0, dico_nodes, dico_edges):
         keep_node_xy(1.0, k / 2048.0, lat0, lon0, dico_nodes)
         keep_node_xy(k / 2048.0, 0.0, lat0, lon0, dico_nodes)
         keep_node_xy(k / 2048.0, 1.0, lat0, lon0, dico_nodes)
-        xcuts[0.0] = xcuts[0.0] + [k / 2048.0]
-        xcuts[1.0] = xcuts[1.0] + [k / 2048.0]
-        ycuts[0.0] = ycuts[0.0] + [k / 2048.0]
-        ycuts[1.0] = ycuts[1.0] + [k / 2048.0]
+        xcuts[0.0] += [k / 2048.0]
+        xcuts[1.0] += [k / 2048.0]
+        ycuts[0.0] += [k / 2048.0]
+        ycuts[1.0] += [k / 2048.0]
     # we compute the intersection of osm edges with horizontal tile boundaries
     for edge in dico_edges:
         initpt = edge.split('|')[0]
         endpt = edge.split('|')[1]
         [xi, yi] = xycoords(initpt, lat0, lon0)
         [xf, yf] = xycoords(endpt, lat0, lon0)
-        if ((yi < 0 and 0 < yf) or (yi > 0 and 0 > yf)):
+        if (yi < 0 < yf) or (yi > 0 > yf):
             xcross = (0 - yf) / (yi - yf) * xi + (yi - 0) / (yi - yf) * xf
-            if xcross > 0 and xcross < 1:
-                xcuts[0.0] = xcuts[0.0] + [xcross]
+            if 0 < xcross < 1:
+                xcuts[0.0] += [xcross]
             keep_node_xy(xcross, 0.0, lat0, lon0, dico_nodes)
             if yi > 0:
                 keep_edge_str_tmp(initpt, strxy(xcross, 0.0, lat0, lon0),
@@ -1710,10 +1640,10 @@ def cut_edges_with_grid(lat0, lon0, dico_nodes, dico_edges):
             elif yf > 0:
                 keep_edge_str_tmp(strxy(xcross, 0.0, lat0, lon0),
                                   endpt, dico_edges[edge], dico_edges_tmp)
-        elif ((yi < 1 and 1 < yf) or (yi > 1 and 1 > yf)):
+        elif (yi < 1 < yf) or (yi > 1 > yf):
             xcross = (1 - yf) / (yi - yf) * xi + (yi - 1) / (yi - yf) * xf
-            if xcross > 0 and xcross < 1:
-                xcuts[1.0] = xcuts[1.0] + [xcross]
+            if 0 < xcross < 1:
+                xcuts[1.0] += [xcross]
             keep_node_xy(xcross, 1.0, lat0, lon0, dico_nodes)
             if yi < 1:
                 keep_edge_str_tmp(initpt, strxy(xcross, 1.0, lat0, lon0),
@@ -1721,35 +1651,35 @@ def cut_edges_with_grid(lat0, lon0, dico_nodes, dico_edges):
             elif yf < 1:
                 keep_edge_str_tmp(strxy(xcross, 1.0, lat0, lon0),
                                   endpt, dico_edges[edge], dico_edges_tmp)
-        elif ((yi == 0) and (yf > 0)):
+        elif (yi == 0) and (yf > 0):
             xcross = xi
             keep_node_xy(xcross, 0.0, lat0, lon0, dico_nodes)
-            xcuts[0.0] = xcuts[0.0] + [xcross]
+            xcuts[0.0] += [xcross]
             dico_edges_tmp[edge] = dico_edges[edge]
-        elif ((yf == 0) and (yi > 0)):
+        elif (yf == 0) and (yi > 0):
             xcross = xf
             keep_node_xy(xcross, 0.0, lat0, lon0, dico_nodes)
-            xcuts[0.0] = xcuts[0.0] + [xcross]
+            xcuts[0.0] += [xcross]
             dico_edges_tmp[edge] = dico_edges[edge]
-        elif ((yi == 1) and (yf < 1)):
+        elif (yi == 1) and (yf < 1):
             xcross = xi
             keep_node_xy(xcross, 1.0, lat0, lon0, dico_nodes)
-            xcuts[1.0] = xcuts[1.0] + [xcross]
+            xcuts[1.0] += [xcross]
             dico_edges_tmp[edge] = dico_edges[edge]
-        elif ((yf == 1) and (yi < 1)):
+        elif (yf == 1) and (yi < 1):
             xcross = xf
             keep_node_xy(xcross, 1.0, lat0, lon0, dico_nodes)
-            xcuts[1.0] = xcuts[1.0] + [xcross]
+            xcuts[1.0] += [xcross]
             dico_edges_tmp[edge] = dico_edges[edge]
-        elif ((yi == 0) and (yf == 0)):
-            xcuts[0.0] = xcuts[0.0] + [xi, xf]
+        elif (yi == 0) and (yf == 0):
+            xcuts[0.0] += [xi, xf]
             keep_node_xy(xi, 0.0, lat0, lon0, dico_nodes)
             keep_node_xy(xf, 0.0, lat0, lon0, dico_nodes)
-        elif ((yi == 1) and (yf == 1)):
-            xcuts[1.0] = xcuts[1.0] + [xi, xf]
+        elif (yi == 1) and (yf == 1):
+            xcuts[1.0] += [xi, xf]
             keep_node_xy(xi, 1.0, lat0, lon0, dico_nodes)
             keep_node_xy(xf, 1.0, lat0, lon0, dico_nodes)
-        elif (yi > 0 and yi < 1) and (yf > 0 and yf < 1):
+        elif (0 < yi < 1) and (0 < yf < 1):
             dico_edges_tmp[edge] = dico_edges[edge]
     dico_edges = dico_edges_tmp
     dico_edges_tmp = {}
@@ -1760,10 +1690,10 @@ def cut_edges_with_grid(lat0, lon0, dico_nodes, dico_edges):
         endpt = edge.split('|')[1]
         [xi, yi] = xycoords(initpt, lat0, lon0)
         [xf, yf] = xycoords(endpt, lat0, lon0)
-        if ((xi < 0 and 0 < xf) or (xi > 0 and 0 > xf)):
+        if (xi < 0 < xf) or (xi > 0 > xf):
             ycross = (0 - xf) / (xi - xf) * yi + (xi - 0) / (xi - xf) * yf
-            if ycross > 0 and ycross < 1:
-                ycuts[0.0] = ycuts[0.0] + [ycross]
+            if 0 < ycross < 1:
+                ycuts[0.0] += [ycross]
             keep_node_xy(0.0, ycross, lat0, lon0, dico_nodes)
             if xi > 0:
                 keep_edge_str_tmp(initpt, strxy(0.0, ycross, lat0, lon0), dico_edges[edge],
@@ -1771,10 +1701,10 @@ def cut_edges_with_grid(lat0, lon0, dico_nodes, dico_edges):
             elif xf > 0:
                 keep_edge_str_tmp(strxy(0.0, ycross, lat0, lon0), endpt, dico_edges[edge],
                                   dico_edges_tmp)
-        elif ((xi < 1 and 1 < xf) or (xi > 1 and 1 > xf)):
+        elif (xi < 1 < xf) or (xi > 1 > xf):
             ycross = (1 - xf) / (xi - xf) * yi + (xi - 1) / (xi - xf) * yf
-            if ycross > 0 and ycross < 1:
-                ycuts[1.0] = ycuts[1.0] + [ycross]
+            if 0 < ycross < 1:
+                ycuts[1.0] += [ycross]
             keep_node_xy(1.0, ycross, lat0, lon0, dico_nodes)
             if xi < 1:
                 keep_edge_str_tmp(initpt, strxy(1.0, ycross, lat0, lon0), dico_edges[edge],
@@ -1782,35 +1712,35 @@ def cut_edges_with_grid(lat0, lon0, dico_nodes, dico_edges):
             elif xf < 1:
                 keep_edge_str_tmp(strxy(1.0, ycross, lat0, lon0), endpt, dico_edges[edge],
                                   dico_edges_tmp)
-        elif ((xi == 0) and (xf > 0)):
+        elif (xi == 0) and (xf > 0):
             ycross = yi
             keep_node_xy(0.0, ycross, lat0, lon0, dico_nodes)
-            ycuts[0.0] = ycuts[0.0] + [ycross]
+            ycuts[0.0] += [ycross]
             dico_edges_tmp[edge] = dico_edges[edge]
-        elif ((xf == 0) and (xi > 0)):
+        elif (xf == 0) and (xi > 0):
             ycross = yf
             keep_node_xy(0.0, ycross, lat0, lon0, dico_nodes)
-            ycuts[0.0] = ycuts[0.0] + [ycross]
+            ycuts[0.0] += [ycross]
             dico_edges_tmp[edge] = dico_edges[edge]
-        elif ((xi == 1) and (xf < 1)):
+        elif (xi == 1) and (xf < 1):
             ycross = yi
             keep_node_xy(1.0, ycross, lat0, lon0, dico_nodes)
-            ycuts[1.0] = ycuts[1.0] + [ycross]
+            ycuts[1.0] += [ycross]
             dico_edges_tmp[edge] = dico_edges[edge]
-        elif ((xf == 1) and (xi < 1)):
+        elif (xf == 1) and (xi < 1):
             ycross = yf
             keep_node_xy(1.0, ycross, lat0, lon0, dico_nodes)
-            ycuts[1.0] = ycuts[1.0] + [ycross]
+            ycuts[1.0] += [ycross]
             dico_edges_tmp[edge] = dico_edges[edge]
-        elif ((xi == 0) and (xf == 0)):
-            ycuts[0.0] = ycuts[0.0] + [yi, yf]
+        elif (xi == 0) and (xf == 0):
+            ycuts[0.0] += [yi, yf]
             keep_node_xy(0.0, yi, lat0, lon0, dico_nodes)
             keep_node_xy(0.0, yf, lat0, lon0, dico_nodes)
-        elif ((xi == 1) and (xf == 1)):
-            ycuts[1.0] = ycuts[1.0] + [yi, yf]
+        elif (xi == 1) and (xf == 1):
+            ycuts[1.0] += [yi, yf]
             keep_node_xy(1.0, yi, lat0, lon0, dico_nodes)
             keep_node_xy(1.0, yf, lat0, lon0, dico_nodes)
-        elif (xi > 0 and xi < 1) and (xf > 0 and xf < 1):
+        elif (0 < xi < 1) and (0 < xf < 1):
             dico_edges_tmp[edge] = dico_edges[edge]
     dico_edges = dico_edges_tmp
     dico_edges_tmp = {}
@@ -1830,9 +1760,9 @@ def cut_edges_with_grid(lat0, lon0, dico_nodes, dico_edges):
             #   print("arête coupant plusieurs lignes horizontales de la grilles : \n")
             #   print(str(abs(til_yi-til_yf))+"\n")
             til_y0 = max(til_yi, til_yf)
-            y0 = 360 / pi * atan(exp(pi * (1 - (til_y0) / (2 ** (meshzl - 1))))) - 90 - lat0
+            y0 = 360 / pi * atan(exp(pi * (1 - til_y0 / (2 ** (meshzl - 1))))) - 90 - lat0
             xcross = (y0 - yf) / (yi - yf) * xi + (yi - y0) / (yi - yf) * xf
-            xcuts[y0] = xcuts[y0] + [xcross]
+            xcuts[y0] += [xcross]
             attribute = ''
             try:
                 attribute = (y0 - yf) / (yi - yf) * dico_nodes[initpt] + (yi - y0) / (yi - yf) * dico_nodes[endpt]
@@ -1870,7 +1800,7 @@ def cut_edges_with_grid(lat0, lon0, dico_nodes, dico_edges):
             til_x0 = max(til_xi, til_xf)
             x0 = (til_x0 / (2 ** (meshzl - 1)) - 1) * 180 - lon0
             ycross = (x0 - xf) / (xi - xf) * yi + (xi - x0) / (xi - xf) * yf
-            ycuts[x0] = ycuts[x0] + [ycross]
+            ycuts[x0] += [ycross]
             attribute = ''
             try:
                 attribute = (x0 - xf) / (xi - xf) * dico_nodes[initpt] + (xi - x0) / (xi - xf) * dico_nodes[endpt]
@@ -1931,10 +1861,6 @@ def cut_edges_with_grid(lat0, lon0, dico_nodes, dico_edges):
 
 
 #############################################################################
-
-
-
-#############################################################################
 # Petite routine bien utile : comment calculer rapidement l'aire d'un
 # polygone dont on dispose de la liste des sommets.  Le signe donne le sens
 # de parcours horaire ou anti-horaire.
@@ -1953,8 +1879,6 @@ def area(way):
 
 
 #############################################################################
-
-#############################################################################
 # Openstreetmap donne tous les objets qui intersectent la tuile, pour les
 # objets de type 'rel' on peut virer les boucles fermées qui sont entièrement
 # hors tuile (sinon par exemple pour lat=45 lon=5 on récupère le Rhônes
@@ -1962,13 +1886,10 @@ def area(way):
 #############################################################################
 def touches_region(way, lat0, lat1, lon0, lon1):
     for node in way:
-        if float(node[0]) >= lat0 and float(node[0]) <= lat1 \
-                and float(node[1]) >= lon0 and float(node[1]) <= lon1:
+        if lat0 <= float(node[0]) <= lat1 and lon0 <= float(node[1]) <= lon1:
             return True
     return False
 
-
-#############################################################################
 
 #############################################################################
 # Comment planter une petite graine qui de proche en proche découvrira tous
@@ -1984,7 +1905,7 @@ def pick_point(way, side, lat0, lon0):
     l = 0
     ptin = False
     i = 0
-    while (l < dmin) or (ptin == False):
+    while l < dmin or ptin is False:
         if len(way) == i + 1:
             break
         x1 = float(way[i][1])
@@ -1997,14 +1918,14 @@ def pick_point(way, side, lat0, lon0):
                 ((x1 > lon0) and (x1 < lon0 + 1) and (y1 > lat0) and (y1 < lat0 + 1)):
             ptin = True
         i += 1
-    if ptin == True:
+    if ptin:
         dperp = 0.000001
         x = 0.5 * x1 + 0.5 * x2 + (y1 - y2) / l * dperp * sign
         y = 0.5 * y1 + 0.5 * y2 + (x2 - x1) / l * dperp * sign
         return [x, y]
     i = 0
     ptin = False
-    while (l < dmin) or (ptin == False):
+    while l < dmin or ptin is False:
         if len(way) == i + 1:
             # This should never happen, we send it to hell
             return [1000, 1000]
@@ -2014,10 +1935,10 @@ def pick_point(way, side, lat0, lon0):
         y2 = float(way[i + 1][0])
         l = sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
         ptin = False
-        if ((x2 > lon0) and (x2 < lon0 + 1) and (y2 > lat0) and (y2 < lat0 + 1)):
+        if (x2 > lon0) and (x2 < lon0 + 1) and (y2 > lat0) and (y2 < lat0 + 1):
             ptin = True
             ptend = 2
-        if ((x1 > lon0) and (x1 < lon0 + 1) and (y1 > lat0) and (y1 < lat0 + 1)):
+        if (x1 > lon0) and (x1 < lon0 + 1) and (y1 > lat0) and (y1 < lat0 + 1):
             ptin = True
             ptend = 1
         i += 1
@@ -2031,9 +1952,6 @@ def pick_point(way, side, lat0, lon0):
     return [x, y]
 
 
-#############################################################################
-
-#############################################################################
 def pick_point_check(way, side, lat0, lon0):
     if side == 'left':
         sign = 1
@@ -2056,7 +1974,7 @@ def pick_point_check(way, side, lat0, lon0):
                 ((x1 > lon0) and (x1 < lon0 + 1) and (y1 > lat0) and (y1 < lat0 + 1)):
             ptin = True
         i += 1
-    if ptin == True:
+    if ptin:
         dperp = 0.000001
         x = 0.5 * x1 + 0.5 * x2 + (y1 - y2) / l * dperp * sign
         y = 0.5 * y1 + 0.5 * y2 + (x2 - x1) / l * dperp * sign
@@ -2072,7 +1990,7 @@ def pick_point_check(way, side, lat0, lon0):
             # return [1000,1000]
     i = 0
     ptin = False
-    while (l < dmin) or (ptin == False):
+    while l < dmin or ptin is False:
         if len(way) == i + 1:
             # This should never happen, we send it to hell
             return [1000, 1000]
@@ -2082,10 +2000,10 @@ def pick_point_check(way, side, lat0, lon0):
         y2 = float(way[i + 1][0])
         l = sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
         ptin = False
-        if ((x2 > lon0) and (x2 < lon0 + 1) and (y2 > lat0) and (y2 < lat0 + 1)):
+        if (x2 > lon0) and (x2 < lon0 + 1) and (y2 > lat0) and (y2 < lat0 + 1):
             ptin = True
             ptend = 2
-        if ((x1 > lon0) and (x1 < lon0 + 1) and (y1 > lat0) and (y1 < lat0 + 1)):
+        if (x1 > lon0) and (x1 < lon0 + 1) and (y1 > lat0) and (y1 < lat0 + 1):
             ptin = True
             ptend = 1
         i += 1
@@ -2107,10 +2025,6 @@ def pick_point_check(way, side, lat0, lon0):
         return [1000, 1000]
 
 
-#############################################################################
-
-
-#############################################################################
 def pick_points_safe(way, side, lat0, lon0, check=False):
     if side == 'left':
         sign = 1
@@ -2145,7 +2059,7 @@ def pick_points_safe(way, side, lat0, lon0, check=False):
             x = 0.99 * x2 + 0.01 * x1 + (y1 - y2) / l * dperp * sign
             y = 0.99 * y2 + 0.01 * y1 + (x2 - x1) / l * dperp * sign
             return_list.append([x, y])
-    if return_list == []:
+    if not return_list:
         return [[1000, 1000]]
     if check:
         polygon = []
@@ -2162,41 +2076,39 @@ def pick_points_safe(way, side, lat0, lon0, check=False):
         return return_list
 
 
-#############################################################################
-
 ##############################################################################
 # La construction des noms des fichiers d'altitudes, sera amené à changer
 # si de meilleures sources libres de DEM voient le jour.
 ##############################################################################
 def downloaded_dem_filename(lat, lon, source):
     if source == 'SRTMv3_1(void filled)':
-        if (lat >= 0):
+        if lat >= 0:
             hemisphere = 'N'
         else:
             hemisphere = 'S'
-        if (lon >= 0):
+        if lon >= 0:
             greenwichside = 'E'
         else:
             greenwichside = 'W'
         filename = "SRTMv3_1_" + hemisphere + '{:.0f}'.format(abs(lat)).zfill(2) + \
                    greenwichside + '{:.0f}'.format(abs(lon)).zfill(3) + '.tif'
     if source == 'SRTMv3_3(void filled)':
-        if (lat >= 0):
+        if lat >= 0:
             hemisphere = 'N'
         else:
             hemisphere = 'S'
-        if (lon >= 0):
+        if lon >= 0:
             greenwichside = 'E'
         else:
             greenwichside = 'W'
         filename = "SRTMv3_3_" + hemisphere + '{:.0f}'.format(abs(lat)).zfill(2) + \
                    greenwichside + '{:.0f}'.format(abs(lon)).zfill(3) + '.tif'
     elif source == 'de_Ferranti':
-        if (lat >= 0):
+        if lat >= 0:
             hemisphere = 'N'
         else:
             hemisphere = 'S'
-        if (lon >= 0):
+        if lon >= 0:
             greenwichside = 'E'
         else:
             greenwichside = 'W'
@@ -2209,9 +2121,6 @@ def downloaded_dem_filename(lat, lon, source):
 
 
 ##############################################################################
-
-
-##############################################################################
 #  Chargement en mémoire des DEM. Si aucun fichier spécifié de Ferranti a la
 #   priorité sur SRTM là où   il est disponible.
 ##############################################################################
@@ -2219,13 +2128,6 @@ def load_altitude_matrix(lat, lon, filename=''):
     filename_srtm1 = downloaded_dem_filename(lat, lon, 'SRTMv3_1(void filled)')
     filename_srtm3 = downloaded_dem_filename(lat, lon, 'SRTMv3_3(void filled)')
     filename_viewfinderpanorama = downloaded_dem_filename(lat, lon, 'de_Ferranti')
-
-    # XXX: tmp debug
-    tmp_debug_cwd = os.getcwd()
-    tmp_debug_elevation_data_found_1 = os.path.exists(os.path.join('.', 'Elevation_data'))
-    tmp_debug_elevation_data_found_2 = os.path.exists(os.path.join('./Elevation_data'))
-    tmp_debug_hgt_found_1 = os.path.exists(os.path.join('.', 'Elevation_data', 'N48W006.hgt'))
-    tmp_debug_hgt_found_2 = os.path.exists(os.path.join('./Elevation_data/N48W006.hgt'))
 
     if filename == '':
         if os.path.isfile(filename_viewfinderpanorama):
@@ -2252,7 +2154,7 @@ def load_altitude_matrix(lat, lon, filename=''):
                 url = "http://viewfinderpanoramas.org/dem3/" + deferranti_letter + deferranti_nbr + ".zip"
 
                 r = s.get(url)
-                if ('Response [20' in str(r)):
+                if 'Response [20' in str(r):
                     print("   Done. The zip archive will now be extracted in the Elevation_data dir.")
                     dem_download_ok = True
                 else:
@@ -2264,14 +2166,14 @@ def load_altitude_matrix(lat, lon, filename=''):
             zipfile = open(Ortho4XP_dir + dir_sep + "tmp" + dir_sep + deferranti_letter + deferranti_nbr + ".zip", 'wb')
             zipfile.write(r.content)
             zipfile.close()
-            os.system(unzip_cmd + ' e -y -o' + Ortho4XP_dir + dir_sep + 'Elevation_data' + ' "' + \
+            os.system(unzip_cmd + ' e -y -o' + Ortho4XP_dir + dir_sep + 'Elevation_data' + ' "' +
                       Ortho4XP_dir + dir_sep + 'tmp' + dir_sep + deferranti_letter + deferranti_nbr + '.zip"')
             os.system(
                 delete_cmd + ' ' + Ortho4XP_dir + dir_sep + 'tmp' + dir_sep + deferranti_letter + deferranti_nbr + '.zip')
             filename = filename_viewfinderpanorama
             # usage('dem_files',do_i_quit=False)
             # return 'error'
-    if ('.hgt') in filename or ('.HGT' in filename):
+    if '.hgt' in filename or '.HGT' in filename:
         try:
             ndem = int(round(sqrt(os.path.getsize(filename) / 2)))
             f = open(filename, 'rb')
@@ -2284,7 +2186,7 @@ def load_altitude_matrix(lat, lon, filename=''):
             return [numpy.zeros([1201, 1201], dtype=numpy.float32), 1201]
         alt.byteswap()
         alt = numpy.asarray(alt, dtype=numpy.float32).reshape((ndem, ndem))
-    elif ('.raw') in filename or ('.RAW' in filename):
+    elif '.raw' in filename or '.RAW' in filename:
         try:
             ndem = int(round(sqrt(os.path.getsize(filename) / 2)))
             f = open(filename, 'rb')
@@ -2298,7 +2200,7 @@ def load_altitude_matrix(lat, lon, filename=''):
         alt = numpy.asarray(alt, dtype=numpy.float32).reshape((ndem, ndem))
         alt = alt[::-1]
     elif ('.tif' in filename) or ('.TIF' in filename):
-        if gdal_loaded == True:
+        if gdal_loaded:
             try:
                 ds = gdal.Open(filename)
                 alt = numpy.float32(ds.GetRasterBand(1).ReadAsArray())
@@ -2315,7 +2217,7 @@ def load_altitude_matrix(lat, lon, filename=''):
                           devnull_rdir)
                 im = Image.open(filename)
                 alt = numpy.float32(im)
-                alt = alt - 65536 * (alt > 10000)
+                alt -= 65536 * (alt > 10000)
                 if alt.shape[0] == alt.shape[1]:
                     ndem = alt.shape[0]
                 else:
@@ -2346,7 +2248,7 @@ def load_altitude_matrix(lat, lon, filename=''):
             atemp = numpy.maximum(alt10, alt20)
             atemp = numpy.maximum(atemp, alt01)
             atemp = numpy.maximum(atemp, alt02)
-            alt = alt + (32768 + atemp) * (alt == -32768)
+            alt += (32768 + atemp) * (alt == -32768)
             if alt.min() > -32768:
                 is_filled = True
             if step > 100:
@@ -2354,9 +2256,6 @@ def load_altitude_matrix(lat, lon, filename=''):
                 break
         print("          Done.\n")
     return [alt, ndem]
-
-
-##############################################################################
 
 
 ##############################################################################
@@ -2395,8 +2294,6 @@ def altitude(x, y, alt_dem, ndem):
 
 
 ##############################################################################
-
-##############################################################################
 # Altitude obtenue par interpolation pour les points hors de la grille du
 # fichier DEM.
 ##############################################################################
@@ -2417,10 +2314,8 @@ def altitude_vec(x, y, alt_dem, ndem):
     t3 = [alt_dem[i][j] for i, j in zip(Nminusny, (nx + 1) * (nx < N))]
     t4 = [alt_dem[i][j] for i, j in zip((Nminusny - 1) * (Nminusny >= 1), nx)]
     return ((1 - rx) * t1 + ry * t2 + (rx - ry) * t3) * (rx >= ry) + ((1 - ry) * t1 + rx * t2 + (ry - rx) * t4) * (
-    rx < ry)
+            rx < ry)
 
-
-##############################################################################
 
 ##############################################################################
 # Same as above but with normals in addition
@@ -2453,10 +2348,7 @@ def altitude_and_normals_vec(x, y, alt_dem, ndem):
     z = ((1 - rx) * t1 + ry * t2 + (rx - ry) * t3) * (rx >= ry) + ((1 - ry) * t1 + rx * t2 + (ry - rx) * t4) * (rx < ry)
     u = D31 / normvector * (rx >= ry) + D12b / normvectorb * (rx < ry)
     v = D12 / normvector * (rx >= ry) + D31b / normvectorb * (rx < ry)
-    return (z, u, -v)
-
-
-##############################################################################
+    return z, u, -v
 
 
 ##############################################################################
@@ -2537,11 +2429,12 @@ def build_3D_vertex_array(lat, lon, alt_dem, ndem, build_dir):
         v3 = (int(idx[3]) - 1)
         if idx[4] in [dico_tri_markers['water'],
                       dico_tri_markers['sea_equiv']]:
-            if tile_has_water_airport != True:  # the parallel process does not otherwise ensure that airports are flat
+            if not tile_has_water_airport:  # the parallel process does not otherwise ensure that airports are flat
                 zmean = (vertices[5 * v1 + 2] + vertices[5 * v2 + 2] + vertices[5 * v3 + 2]) / 3
                 vertices[5 * v1 + 2] = zmean
                 vertices[5 * v2 + 2] = zmean
                 vertices[5 * v3 + 2] = zmean
+
         elif idx[4] in dico_tri_markers['altitude']:
             vertices[5 * v1 + 2] = input_alt[v1]
             # if input_alt[v1]==-32768: print(v1)
@@ -2549,6 +2442,7 @@ def build_3D_vertex_array(lat, lon, alt_dem, ndem, build_dir):
             # if input_alt[v2]==-32768: print(v2)
             vertices[5 * v3 + 2] = input_alt[v3]
             # if input_alt[v3]==-32768: print(v3)
+
         elif (100 <= int(idx[4])) and (int(idx[4]) < 1000) and f_apt_loaded:
             # continue
             if idx[4] in dico_alt_ap:
@@ -2559,7 +2453,7 @@ def build_3D_vertex_array(lat, lon, alt_dem, ndem, build_dir):
                 continue
             found = False
             f_apt.seek(0)
-            while found != True:
+            while not found:
                 tmplist = f_apt.readline()
                 if tmplist == '':
                     print("Error processing the .apt file.")
@@ -2576,18 +2470,19 @@ def build_3D_vertex_array(lat, lon, alt_dem, ndem, build_dir):
                 tmplist = f_apt.readline().split()
                 x = float(tmplist[1]) - lon
                 y = float(tmplist[0]) - lat
-                if (x < 0 or x > 1 or y < 0 or y > 1):
+                if x < 0 or x > 1 or y < 0 or y > 1:
                     apt_crosses_tile = True
                 height += altitude(x, y, alt_dem, ndem)
-            height = height / nbr_nodes
-            if apt_crosses_tile == True and osm_height != 'unknown':
+            height /= nbr_nodes
+            if apt_crosses_tile and osm_height != 'unknown':
                 # (crude) ele tag is max elevation, not mean elevation
                 height = float(osm_height) - 8
             vertices[5 * v1 + 2] = height
             vertices[5 * v2 + 2] = height
             vertices[5 * v3 + 2] = height
             dico_alt_ap[idx[4]] = height
-        elif int(idx[4]) >= 1000 and int(idx[4]) < 10000 and f_apt_loaded:
+
+        elif 1000 <= int(idx[4]) < 10000 and f_apt_loaded:
             if idx[4] in dico_alt_ap:
                 height = dico_alt_ap[idx[4]]
                 vertices[5 * v1 + 2] = height
@@ -2596,7 +2491,7 @@ def build_3D_vertex_array(lat, lon, alt_dem, ndem, build_dir):
                 continue
             found = False
             f_apt.seek(0)
-            while found != True:
+            while not found:
                 tmplist = f_apt.readline()
                 if tmplist == '':
                     print("Error processing the .apt file.")
@@ -2614,20 +2509,21 @@ def build_3D_vertex_array(lat, lon, alt_dem, ndem, build_dir):
                     x = float(tmplist[1]) - lon
                     y = float(tmplist[0]) - lat
                     height += altitude(x, y, alt_dem, ndem)
-                height = height / nbr_nodes
+                height /= nbr_nodes
             else:
                 height = float(patch_height)
             vertices[5 * v1 + 2] = height
             vertices[5 * v2 + 2] = height
             vertices[5 * v3 + 2] = height
             dico_alt_ap[idx[4]] = height
+
         elif 10000 <= int(idx[4]) and f_apt_loaded:
             if idx[4] in dico_alt_ap:
                 tmplist = dico_alt_ap[idx[4]]
             else:
                 found = False
                 f_apt.seek(0)
-                while found != True:
+                while not found:
                     tmplist = f_apt.readline()
                     if tmplist == '':
                         print("Error processing the .apt file.")
@@ -2682,6 +2578,7 @@ def build_3D_vertex_array(lat, lon, alt_dem, ndem, build_dir):
                 vertices[5 * v1 + 2] = zi + rat1 * (zf - zi)
                 vertices[5 * v2 + 2] = zi + rat2 * (zf - zi)
                 vertices[5 * v3 + 2] = zi + rat3 * (zf - zi)
+
     if water_smoothing >= 3:
         print("   Smoothing of lakes and rivers (ultimate passes).")
         # Next, we average altitudes of triangles of fresh water type.
@@ -2709,8 +2606,6 @@ def build_3D_vertex_array(lat, lon, alt_dem, ndem, build_dir):
 
 
 ##############################################################################
-
-##############################################################################
 # Write of the mesh file based on .1.ele, .1.node and vertices
 ##############################################################################
 def build_mesh_file(lat, lon, vertices, mesh_filename, build_dir):
@@ -2727,14 +2622,14 @@ def build_mesh_file(lat, lon, vertices, mesh_filename, build_dir):
     f.write("Vertices\n")
     f.write(str(nbr_vert) + "\n")
     for i in range(0, nbr_vert):
-        f.write('{:.9f}'.format(vertices[5 * i]) + " " + \
-                '{:.9f}'.format(vertices[5 * i + 1]) + " " + \
+        f.write('{:.9f}'.format(vertices[5 * i]) + " " +
+                '{:.9f}'.format(vertices[5 * i + 1]) + " " +
                 '{:.9f}'.format(vertices[5 * i + 2] / 100000) + " 0\n")
     f.write("\n")
     f.write("Normals\n")
     f.write(str(nbr_vert) + "\n")
     for i in range(0, nbr_vert):
-        f.write('{:.9f}'.format(vertices[5 * i + 3]) + " " + \
+        f.write('{:.9f}'.format(vertices[5 * i + 3]) + " " +
                 '{:.9f}'.format(vertices[5 * i + 4]) + "\n")
     f.write("\n")
     f.write("Triangles\n")
@@ -2743,10 +2638,7 @@ def build_mesh_file(lat, lon, vertices, mesh_filename, build_dir):
         f.write(' '.join(f_ele.readline().split()[1:]) + "\n")
     f_ele.close()
     f.close()
-    return
 
-
-##############################################################################
 
 ##############################################################################
 # Write of the wavefront obj file based on .1.ele, .1.node and vertices
@@ -2761,12 +2653,12 @@ def build_obj_file(lat, lon, vertices, obj_filename, build_dir):
     nbr_tri = int(f_ele.readline().split()[0])
     f = open(obj_filename, "w")
     for i in range(0, nbr_vert):
-        f.write("v " + '{:.9f}'.format(vertices[5 * i]) + " " + \
-                '{:.9f}'.format(vertices[5 * i + 1]) + " " + \
+        f.write("v " + '{:.9f}'.format(vertices[5 * i]) + " " +
+                '{:.9f}'.format(vertices[5 * i + 1]) + " " +
                 '{:.9f}'.format(vertices[5 * i + 2] / 100000) + "\n")
     f.write("\n")
     for i in range(0, nbr_vert):
-        f.write("vn " + '{:.9f}'.format(vertices[5 * i + 3]) + " " + \
+        f.write("vn " + '{:.9f}'.format(vertices[5 * i + 3]) + " " +
                 '{:.9f}'.format(vertices[5 * i + 4]) + " " + '{:.9f}'.format(
             sqrt(1 - vertices[5 * i + 3] ** 2 - vertices[5 * i + 4] ** 2)) + " \n")
     f.write("\n")
@@ -2775,10 +2667,7 @@ def build_obj_file(lat, lon, vertices, obj_filename, build_dir):
         f.write("f " + one + "//" + one + " " + two + "//" + two + " " + three + "//" + three + "\n")
     f_ele.close()
     f.close()
-    return
 
-
-##############################################################################
 
 ##############################################################################
 # Transform a mesh file to a wavefront obj file with possible cut region
@@ -2839,12 +2728,12 @@ def mesh_to_obj(lat, lon, mesh_filename, obj_filename, latmin, latmax, lonmin, l
     nbr_tri = int(f_ele.readline().split()[0])
     f = open(obj_filename, "w")
     for i in range(0, nbr_vert):
-        f.write("v " + '{:.9f}'.format(vertices[5 * i]) + " " + \
-                '{:.9f}'.format(vertices[5 * i + 1]) + " " + \
+        f.write("v " + '{:.9f}'.format(vertices[5 * i]) + " " +
+                '{:.9f}'.format(vertices[5 * i + 1]) + " " +
                 '{:.9f}'.format(vertices[5 * i + 2] / 100000) + "\n")
     f.write("\n")
     for i in range(0, nbr_vert):
-        f.write("vn " + '{:.9f}'.format(vertices[5 * i + 3]) + " " + \
+        f.write("vn " + '{:.9f}'.format(vertices[5 * i + 3]) + " " +
                 '{:.9f}'.format(vertices[5 * i + 4]) + " " + '{:.9f}'.format(
             sqrt(1 - vertices[5 * i + 3] ** 2 - vertices[5 * i + 4] ** 2)) + " \n")
     f.write("\n")
@@ -2853,12 +2742,8 @@ def mesh_to_obj(lat, lon, mesh_filename, obj_filename, latmin, latmax, lonmin, l
         f.write("f " + one + "//" + one + " " + two + "//" + two + " " + three + "//" + three + "\n")
     f_ele.close()
     f.close()
-    return
 
 
-##############################################################################
-
-##############################################################################
 def build_mesh(lat, lon, build_dir):
     t2 = time.time()
     strlat = '{:+.0f}'.format(lat).zfill(3)
@@ -8803,7 +8688,7 @@ if __name__ == '__main__':
     print("\nStep 2.5 : Building Masks for Tile " + strlat + strlon + " : ")
     print("----------\n")
     mesh_filename = build_dir + dir_sep + 'Data' + strlat + strlon + ".mesh"
-    if complex_masks == False:
+    if not complex_masks:
         mesh_filename_list = [mesh_filename]
     else:
         mesh_filename_list = []
@@ -8827,6 +8712,7 @@ if __name__ == '__main__':
     print("--------\n")
     build_tile(lat, lon, build_dir, mesh_filename, False)
     print('\nBon vol !')
+
 ##############################################################################
 #                                                                            #
 #                           THAT'S ALL FOLKS                                 #
