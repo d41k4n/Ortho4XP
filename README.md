@@ -3,7 +3,7 @@ Ortho4XP is a scenery generator for the X-Plane flight simulator, written by _**
 
 **Please be aware that THIS IS NOT THE OFFICIAL Ortho4XP**.
 
-This version/branch contains modifications done by [PilotBalu](http://forums.x-plane.org/index.php?/profile/227571-pilotbalu/) (Armin G. Sendner) based on release v1.20b with the following additional features:
+This version/branch contains modifications done by [PilotBalu](http://forums.x-plane.org/index.php?/profile/227571-pilotbalu/) based on release v1.20b with the following additional features:
 - line 0193: define max number of vertices
 - line 2763 - 2791: loop to increase curvature_tol step by step to get best results (starting at 0.2, increasing until # of tris is optimal)
 - line 2903: file names without service and zoomlevel, allows mixing of different services (some tiles may be generated from images from different services - this makes it easier)
