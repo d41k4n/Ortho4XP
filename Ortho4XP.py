@@ -23,7 +23,7 @@
 #                                                                            #
 ##############################################################################
 
-version=' v1.20b'
+version=' v1.20b_ags' # adapted version by PilotBalu, changes marked with [AGS], changes listed at the end of the file
 
 import os
 import sys
@@ -104,11 +104,11 @@ configvars_strings=['default_website','overpass_server_choice','gimp_cmd','dds_o
 
 configvars_defaults={\
         'default_website':'BI',\
-        'default_zl':16,\
+        'default_zl':17,\
         'water_option':3,\
         'sea_texture_params':[],\
-        'cover_airports_with_highres':False,\
-        'cover_zl':18,\
+        'cover_airports_with_highres':True,\
+        'cover_zl':19,\
         'cover_extent':1,\
         'min_area':0.01,\
         'sea_equiv':[],\
@@ -118,7 +118,7 @@ configvars_defaults={\
         'poly_simplification_tol':0.002,\
         'overpass_server_list':{"1":"http://api.openstreetmap.fr/oapi/interpreter", "2":"http://overpass-api.de/api/interpreter","3":"http://overpass.osm.rambler.ru/cgi/interpreter"},\
         'overpass_server_choice':1,\
-        'curvature_tol':3,\
+        'curvature_tol':0.2,\
         'no_small_angles':False,\
         'smallest_angle':5,\
         'hmin':20,\
@@ -147,7 +147,7 @@ configvars_defaults={\
         'check_tms_response':True,\
         'verbose_output':True,\
         'clean_tmp_files':True,\
-        'clean_unused_dds_and_ter_files':False,\
+        'clean_unused_dds_and_ter_files':True,\
         'contrast_adjust':{},\
         'brightness_adjust':{},\
         'saturation_adjust':{},\
@@ -190,6 +190,7 @@ pools_max_points    = 65536    # do not change this !
 shutdown_timer      = 60       # Time in seconds to close program / shutdown computer after completition
 shutd_msg_interval  = 15       # Shutdown message display interval
 raster_resolution = 10000      # Image size for the raster of the sniffed landclass terrain, not yet used
+max_no_vertices     = 20000000 # [AGS] maximum number of vertices
 
 # Will be used as global variables
 download_to_do_list=[]
@@ -2758,16 +2759,38 @@ def build_mesh(lat,lon,build_dir):
         Tri_option = ' -pq'+str(smallest_angle)+'uAYPQ '
     else:
         Tri_option = ' -pAuYPQ '
-    mesh_cmd=[Triangle4XP_cmd.strip(),Tri_option.strip(),str(ndem),str(curvature_tol),\
+		
+    # [AGS] added loop function: check and increase curvature_tol 
+    # if number of vertices are too high
+    too_much_vertices = True
+    curvature_tol = 0.2 # [AGS] ignore config, start at 0.2, hard coded
+    while too_much_vertices==True:
+        # [AGS] beginning of original procedure
+        mesh_cmd=[Triangle4XP_cmd.strip(),Tri_option.strip(),str(ndem),str(curvature_tol),\
             str(hmax/100000),str(hmin/100000),alt_filename,poly_file]
-    fingers_crossed=subprocess.Popen(mesh_cmd,stdout=subprocess.PIPE,bufsize=0)
-    while True:
-        line = fingers_crossed.stdout.readline()
-        if not line: 
-            break
+        fingers_crossed=subprocess.Popen(mesh_cmd,stdout=subprocess.PIPE,bufsize=0)
+        while True:
+            line = fingers_crossed.stdout.readline()
+            if not line: 
+                break
+            else:
+                print(line.decode("utf-8")[:-1])
+        vertices=build_3D_vertex_array(lat,lon,alt_dem,ndem,build_dir)
+        # [AGS] end of original procedure
+        # [AGS] check number of vertices and increase curvature_tol if number of vertices is too high
+        if len(vertices) > max_no_vertices:
+            # [AGS] increase curvature_tol +0.1
+            curvature_tol+=0.1
+            # [AGS] If vertices are much higher, increase more
+            if len(vertices) > (2*max_no_vertices):
+                curvature_tol+=0.2
+            print('-> too much vertices: '+str('{:,}'.format(len(vertices)))+\
+                ', increasing curvature_tol to '+str(curvature_tol)+'\n')
         else:
-            print(line.decode("utf-8")[:-1])
-    vertices=build_3D_vertex_array(lat,lon,alt_dem,ndem,build_dir)
+            too_much_vertices = False
+    print('-> '+str('{:,}'.format(len(vertices)))+' vertices okay, proceeding...\n')
+    # [AGS] end of check, continue with original procedure
+	
     build_mesh_file(lat,lon,vertices,mesh_filename,build_dir)
     #build_obj_file(lat,lon,vertices,obj_filename,build_dir)
     print('\nCompleted in '+str('{:.2f}'.format(time.time()-t2))+\
@@ -2878,7 +2901,9 @@ def filename_from_attributes(strlat,strlon,til_x_left,til_y_top,\
         file_name=g2xpl_16_prefix+str(zoomlevel)+'_'+str(til_x_left)+'_'+\
                 str(2**zoomlevel-16-til_y_top)+g2xpl_16_suffix
     else:
-        file_name=str(til_y_top)+"_"+str(til_x_left)+"_"+website+str(zoomlevel)   
+		# [AGS] Filenames without website and zoomlevel
+        # file_name=str(til_y_top)+"_"+str(til_x_left)+"_"+website+str(zoomlevel)   
+        file_name=str(til_y_top)+"_"+str(til_x_left)  
     file_ext=".jpg"
     return [file_dir,file_name,file_ext]
 ##############################################################################
@@ -4525,7 +4550,9 @@ def build_tile(lat,lon,build_dir,mesh_filename,check_for_what_next=True):
             print("  -> removing "+oldfilename)
             os.remove(build_dir+dir_sep+'textures'+dir_sep+oldfilename)
     if clean_tmp_files==True:
-        clean_temporary_files(build_dir,['POLY','ELE'])                                                 
+        # [AGS] added OSM and MESH for files to clean
+        # clean_temporary_files(build_dir,['POLY','ELE'])                                                 
+        clean_temporary_files(build_dir,['POLY','ELE','OSM','MESH'])  
     else:
         clean_temporary_files(build_dir,['ELE'])
     print('\nCompleted in '+str('{:.2f}'.format(time.time()-t3))+\
@@ -8546,7 +8573,10 @@ if __name__ == '__main__':
 #                                                                            #
 ##############################################################################
 
-
-
+# [AGS] changes made by PilotBalu (AGS) to the original version v1.20b
+# line 0193: define max number of vertices
+# line 2763 - 2791: loop to increase curvature_tol step by step to get best results
+# line 2903: file names without service and zoomlevel, allows mixing of different services
+# line 4553: also clean temp files for OSM and MESH
 
 
