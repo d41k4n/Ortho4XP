@@ -30,7 +30,7 @@ except:
 # You can also remove the codes you don't want to appear in the interface.
 
 # 1) List of websites that use WGS84 TMS standard with 256x256 pixmaps.
-px256_list=['OSM','BI','GO2','Arc','Here','USA_2','FR','FRorth','FRom','FRsat','FRsat2','Top25','SP','CH','OST','SE','Hitta','CZ','AU_1','JP','NZ','ASK_1','ASK_2','F44','FRsatp','FO','g2xpl_8','g2xpl_16']                     
+px256_list=['OSM','BI','GO2','Arc','Here','USA_2','FR','FRorth','FRom','FRsat','FRsat2','Top25','SP','CH','OST','SE','Hitta','CZ','AU_1','JP','NZ','ASK_1','ASK_2','F44','FRsatp','FO','g2xpl_8','g2xpl_16','NO3']                     
 # 2) List of WMS sites accepting 2048x2048 image requests
 wms2048_list=['DE','IT','PL','SLO','CRO','SE2','BE_Wa','NE','NE2','DK','USA_1','GE','EST'] 
 
@@ -482,8 +482,18 @@ def http_requests_form(til_x_left,til_y_top,zoomlevel,website):
              str(minx)+','+str(miny)+','+str(maxx)+','+str(maxy)+\
              "&WIDTH=2048&HEIGHT=2048"
         fake_headers=fake_headers_generic
-    
 
+		
+    ####################################################
+    # Norway Webatlas by twitch.tv/GiantUnicorn
+    # Unsure about copyright
+    ####################################################
+    elif website=='NO3':
+        url="https://waapi.webatlas.no/maptiles/tiles/webatlas-orto-newup/wa_grid/"+\
+            str(zoomlevel)+"/"+str(til_x)+"/"+str(til_y_top)+".jpeg?APITOKEN=9da664c7-e5b9-4dc7-a093-7ef0f90563c0"
+        fake_headers=fake_headers_generic		
+
+		
     ####################################################
     # National geographical institute of Denmark
     ####################################################
