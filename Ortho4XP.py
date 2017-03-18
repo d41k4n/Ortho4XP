@@ -1,7 +1,7 @@
 #!/usr/bin/env python3                                                       
 ##############################################################################
 # Ortho4XP : A base mesh creation tool for the X-Plane 11 flight simulator.  #
-# Version  : 1.20b                                                            #
+# Version  : devel                                                           #
 # Copyright 2016 Oscar Pilote                                                #
 # Thanks to all that have contributed to improvement of the code.            #
 ##############################################################################
@@ -23,7 +23,7 @@
 #                                                                            #
 ##############################################################################
 
-version=' v1.20b'
+version=' devel'
 
 import os
 import sys
@@ -2368,9 +2368,9 @@ def build_3D_vertex_array(lat,lon,alt_dem,ndem,build_dir):
         vertices[5*i+3]=float(coordlist[4])
         vertices[5*i+4]=float(coordlist[5])
         try:
-            input_alt[i]=float(coordlist[6])
+            input_alt[i]=float(coordlist[6]) 
         except:
-            input_alt[i]=-32768
+            input_alt[i]=-32768 
     f_node.close()
     # Now we modify the altitude we got from the DEM in certain 
     # circumstances, because we want flat water, flat (or correctly sloped
@@ -3820,7 +3820,7 @@ def build_dsf(lat0,lon0,ortho_list,water_overlay,\
         [lon3,lat3,z3,u3,v3]=pt_in[5*n3:5*n3+5]
         texture=attribute_texture(lat1,lon1,lat2,lon2,lat3,lon3,ortho_list,tri_type)
         if texture=='None':
-            continue
+            continue 
             pixx=int(((lon1+lon2+lon3)/3-lon0)*raster_resolution)     
             pixy=int((lat0+1-(lat1+lat2+lat3)/3)*raster_resolution)
             #print(pixx,pixy)
@@ -5644,8 +5644,12 @@ class Earth_Preview_window(Toplevel):
         if y0<0: y0=0 
         self.nx0=int((8*x0)//self.resolution)
         self.ny0=int((8*y0)//self.resolution)
-        self.canvas.bind("<ButtonPress-3>", self.scroll_start)
-        self.canvas.bind("<B3-Motion>", self.scroll_move)
+        if 'dar' in sys.platform:
+            self.canvas.bind("<ButtonPress-2>", self.scroll_start)
+            self.canvas.bind("<B2-Motion>", self.scroll_move)
+        else:
+            self.canvas.bind("<ButtonPress-3>", self.scroll_start)
+            self.canvas.bind("<B3-Motion>", self.scroll_move)
         self.canvas.bind("<Double-Button-1>",self.select_tile)
         self.canvas.bind("<Shift-ButtonPress-1>",self.add_tile)
         self.canvas.bind("<Control-ButtonPress-1>",self.toggle_to_custom)
@@ -6178,12 +6182,17 @@ class Preview_window(Toplevel):
         self.map_y_res=self.photo.height()
         self.img_map=self.canvas.create_image(0,0,anchor=NW,image=self.photo)
         self.canvas.config(scrollregion=self.canvas.bbox(ALL))
-        self.canvas.bind("<ButtonPress-3>", self.scroll_start)
-        self.canvas.bind("<B3-Motion>", self.scroll_move)
+        if 'dar' in sys.platform:
+            self.canvas.bind("<ButtonPress-2>", self.scroll_start)
+            self.canvas.bind("<B2-Motion>", self.scroll_move)
+            self.canvas.bind("<Control-ButtonPress-2>",self.delPol)
+        else:
+            self.canvas.bind("<ButtonPress-3>", self.scroll_start)
+            self.canvas.bind("<B3-Motion>", self.scroll_move)
+            self.canvas.bind("<Control-ButtonPress-3>",self.delPol)
         self.canvas.bind("<Shift-ButtonPress-1>",self.newPoint)
         self.canvas.bind("<Control-Shift-ButtonPress-1>",self.newPointGrid)
         self.canvas.bind("<Control-ButtonPress-1>",self.newPol)
-        self.canvas.bind("<Control-ButtonPress-3>",self.delPol)
         self.canvas.focus_set()
         self.canvas.bind('p', self.newPoint)
         self.canvas.bind('d', self.delete_zone_cmd)
