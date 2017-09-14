@@ -30,7 +30,7 @@ except:
 # You can also remove the codes you don't want to appear in the interface.
 
 # 1) List of websites that use WGS84 TMS standard with 256x256 pixmaps.
-px256_list=['OSM','BI','GO2','Arc','Here','USA_2','FR','FRorth','FRom','FRsat','FRsat2','Top25','SP','CH','OST','SE','Hitta','CZ','AU_1','JP','NZ','ASK_1','ASK_2','F44','FRsatp','FO','g2xpl_8','g2xpl_16']                     
+px256_list=['OSM','BI','GO2','Arc','Here','USA_2','FR','FRorth','FRom','FRsat','FRsat2','Top25','SP','CH','OST','SE','Hitta','CZ','AU_1','JP','NZ','ASK_1','ASK_2','F44','FRsatp','FO','g2xpl_8','g2xpl_16','Mapbox']                     
 # 2) List of WMS sites accepting 2048x2048 image requests
 wms2048_list=['DE','IT','PL','SLO','CRO','SE2','BE_Wa','NE','NE2','DK','USA_1','GE','EST'] 
 
@@ -102,7 +102,22 @@ def http_requests_form(til_x_left,til_y_top,zoomlevel,website):
             "/"+str(til_y)+"/"+str(til_x)
         fake_headers=fake_headers_generic       
     
- 
+    ####################################################
+    # Mapbox (restrictive copyright)
+    # https://www.mapbox.com/maps/satellite/
+    # Might require replacing of the access token string
+    ####################################################
+    elif website=="Mapbox":
+        server=random.randint(0,1)
+        if server==0:
+            letter='a'
+        elif server==1:
+            letter='b'
+        url="http://"+letter+".tiles.mapbox.com/v4/mapbox.satellite/"+\
+            str(zoomlevel)+"/"+str(til_x)+"/"+str(til_y)+".jpg?access_token="+\
+            "pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4M29iazA2Z2gycXA4N2pmbDZmangifQ.-g_vE53SD2WrJ6tFX7QHmA"
+        fake_headers=fake_headers_generic    
+    
     ####################################################
     # Openstreetmap (open data)
     # Viewer on www.openstreetmap.org
