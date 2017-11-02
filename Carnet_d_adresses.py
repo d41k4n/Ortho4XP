@@ -30,7 +30,7 @@ except:
 # You can also remove the codes you don't want to appear in the interface.
 
 # 1) List of websites that use WGS84 TMS standard with 256x256 pixmaps.
-px256_list=['OSM','BI','GO2','Arc','Here','USA_2','FR','FRorth','FRom','FRsat','FRsat2','Top25','SP','CH','OST','SE','Hitta','CZ','AU_1','JP','NZ','ASK_1','ASK_2','F44','FRsatp','FO','g2xpl_8','g2xpl_16','Mapbox']                     
+px256_list=['OSM','BI','GO2','Arc','Here','USA_2','FR','FRorth','FRom','FRsat','FRsat2','Top25','SP','CH','OST','SE','Hitta','CZ','AU_1','JP','NZ','ASK_1','ASK_2','F44','FRsatp','FO','g2xpl_8','g2xpl_16','Mapbox','EOX']                     
 # 2) List of WMS sites accepting 2048x2048 image requests
 wms2048_list=['DE','IT','PL','SLO','CRO','SE2','BE_Wa','NE','NE2','DK','USA_1','GE','EST'] 
 
@@ -100,6 +100,17 @@ def http_requests_form(til_x_left,til_y_top,zoomlevel,website):
         url="http://server.arcgisonline.com/arcgis/rest/"+\
             "services/World_Imagery/MapServer/tile/"+str(zoomlevel)+\
             "/"+str(til_y)+"/"+str(til_x)
+        fake_headers=fake_headers_generic       
+        
+    ####################################################
+    # EOX Sentinel-2 Cloudless Layer
+    # Creative Commons Attribution 4.0 International License
+    # Sentinel-2 cloudless - https://s2maps.eu by EOX IT Services GmbH 
+    # Contains modified Copernicus Sentinel data 2016 & 2017
+    ####################################################
+    elif website=="EOX":
+        url="https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless_3857/default/g/"+str(zoomlevel)+\
+            "/"+str(til_y)+"/"+str(til_x)+".jpg"
         fake_headers=fake_headers_generic       
     
     ####################################################
