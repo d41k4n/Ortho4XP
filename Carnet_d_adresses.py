@@ -109,7 +109,7 @@ def http_requests_form(til_x_left,til_y_top,zoomlevel,website):
     # Contains modified Copernicus Sentinel data 2016 & 2017
     ####################################################
     elif website=="EOX":
-        url="https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless_3857/default/g/"+str(zoomlevel)+\
+        url="http://tiles.maps.eox.at/wmts/1.0.0/s2cloudless_3857/default/g/"+str(zoomlevel)+\
             "/"+str(til_y)+"/"+str(til_x)+".jpg"
         fake_headers=fake_headers_generic       
     
