@@ -455,10 +455,18 @@ def http_requests_form(til_x_left,til_y_top,zoomlevel,website):
     # Unsure about copyright
     ####################################################
     elif website=='SE':
-        url="http://map04.eniro.no/geowebcache/service/tms1.0.0/aerial/"+\
+        server=random.randint(1,4)
+        url="http://map0"+str(server)+".eniro.no/geowebcache/service/tms1.0.0/aerial/"+\
             str(zoomlevel)+"/"+str(til_x)+"/"+str(2**zoomlevel-1-til_y)+".jpeg"
-        fake_headers=fake_headers_generic       
-
+        fake_headers={\
+            'User-Agent':"Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:59.0) Gecko/20100101 Firefox/59.0",\
+            'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',\
+            'Accept-Language':'en-US,en;q=0.5',\
+            'Connection':'keep-alive',\
+            'Accept-Encoding':'gzip, deflate',\
+            'DNT':'1',\
+            'Upgrade-Insecure-Requests':'1'\
+        }
 
     ####################################################
     # National geographical institute of Poland 
