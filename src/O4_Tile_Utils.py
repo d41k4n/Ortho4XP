@@ -38,6 +38,8 @@ def download_textures(tile,download_queue,convert_queue):
 
 ##############################################################################
 def build_tile(tile):
+    if UI.is_working: return 0
+    UI.is_working=1
     UI.red_flag=False
     UI.logprint("Step 3 for tile lat=",tile.lat,", lon=",tile.lon,": starting.")
     UI.vprint(0,"\nStep 3 : Building DSF/Imagery for tile "+FNAMES.short_latlon(tile.lat,tile.lon)+" : \n--------\n")
@@ -50,7 +52,6 @@ def build_tile(tile):
     timer=time.time()
     
     tile.write_to_config()
-    #tile.ensure_elevation_data()
     
     IMG.initialize_local_combined_providers_dict(tile)
 
@@ -59,8 +60,14 @@ def build_tile(tile):
             os.makedirs(os.path.join(tile.build_dir,'Earth nav data',FNAMES.round_latlon(tile.lat,tile.lon)))
         if not os.path.isdir(os.path.join(tile.build_dir,'textures')):
             os.makedirs(os.path.join(tile.build_dir,'textures'))
-        try: shutil.rmtree(os.path.join(tile.build_dir,'terrain'))
-        except: pass
+        if UI.cleaning_level>1 and not tile.grouped:
+            for f in os.listdir(os.path.join(tile.build_dir,'textures')):
+                if f[-4:]!='.png': continue
+                try: os.remove(os.path.join(tile.build_dir,'textures',f))
+                except: pass
+        if not tile.grouped:    
+            try: shutil.rmtree(os.path.join(tile.build_dir,'terrain'))
+            except: pass
         if not os.path.isdir(os.path.join(tile.build_dir,'terrain')):
             os.makedirs(os.path.join(tile.build_dir,'terrain'))
     except Exception as e: 
@@ -92,6 +99,20 @@ def build_tile(tile):
             elif dico_conv_progress['done']>=1: 
                 UI.vprint(1," *DDS conversion of textures completed.")
     if UI.red_flag: UI.exit_message_and_bottom_line(); return 0
+    if UI.cleaning_level>1:
+        try: os.remove(FNAMES.alt_file(tile))
+        except: pass
+        try: os.remove(FNAMES.input_node_file(tile))
+        except: pass
+        try: os.remove(FNAMES.input_poly_file(tile))
+        except: pass
+    if UI.cleaning_level>2:
+        try: os.remove(FNAMES.mesh_file(tile.build_dir,tile.lat,tile.lon))
+        except: pass
+        try: os.remove(FNAMES.apt_file(tile))
+        except: pass
+    if UI.cleaning_level>1 and not tile.grouped:
+        remove_unwanted_textures(tile)
     UI.timings_and_bottom_line(timer)
     UI.logprint("Step 3 for tile lat=",tile.lat,", lon=",tile.lon,": normal exit.")
     return 1
@@ -100,12 +121,21 @@ def build_tile(tile):
 ##############################################################################
 def build_all(tile):
     VMAP.build_poly_file(tile)
+    if UI.red_flag: UI.exit_message_and_bottom_line(''); return 0
     MESH.build_mesh(tile)
+    if UI.red_flag: UI.exit_message_and_bottom_line(''); return 0
     MASK.build_masks(tile)
+    if UI.red_flag: UI.exit_message_and_bottom_line(''); return 0
     build_tile(tile)
+    if UI.red_flag: UI.exit_message_and_bottom_line(''); return 0
+    UI.is_working=0
+    return 1
 ##############################################################################
 
+##############################################################################
 def build_tile_list(tile,list_lat_lon,do_osm,do_mesh,do_mask,do_dsf,do_ovl,do_ptc):
+    if UI.is_working: return 0
+    UI.is_working=1
     timer=time.time()
     UI.lvprint(0,"Batch build launched for a number of",len(list_lat_lon),"tiles.")
     k=0
@@ -128,5 +158,20 @@ def build_tile_list(tile,list_lat_lon,do_osm,do_mesh,do_mask,do_dsf,do_ovl,do_pt
         if do_ovl: OVL.build_overlay(lat,lon)
         if UI.red_flag: UI.exit_message_and_bottom_line(); return 0
     UI.lvprint(0,"Batch process completed in",UI.nicer_timer(time.time()-timer))
+    UI.is_working=0
     return 1
-        
+##############################################################################
+
+##############################################################################
+def remove_unwanted_textures(tile):
+    texture_list=[]
+    for f in os.listdir(os.path.join(tile.build_dir,'terrain')):
+        if f[-4:]!='.ter': continue
+        texture_list.append('_'.join(f[:-4].split('_')[:3])+'.dds')
+    for f in os.listdir(os.path.join(tile.build_dir,'textures')):   
+        if f[-4:]!='.dds': continue
+        if f not in texture_list:
+            print("Removing obsolete texture",f)
+            try: os.remove(os.path.join(tile.build_dir,'textures',f))
+            except:pass
+##############################################################################

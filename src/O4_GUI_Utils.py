@@ -172,7 +172,6 @@ class Ortho4XP_GUI(tk.Tk):
         except:
             pass
 
-
     # GUI methods
     def write(self,line):
         self.console_queue.put(line)
@@ -202,6 +201,10 @@ class Ortho4XP_GUI(tk.Tk):
     
     def tile_change(self,*args):
         CFG.custom_dem=''
+        try: 
+            self.config_window.v_['custom_dem'].set('')
+        except:
+            pass
         CFG.zone_list=[]
 
     def update_cfg(self,*args):    
@@ -382,7 +385,7 @@ class Ortho4XP_Custom_ZL(tk.Toplevel):
         self.zmap_choice.set(self.parent.default_website.get())
 
         self.zlpol=tk.IntVar()
-        self.zlpol.set(17)
+        self.zlpol.set(max(min(int(self.parent.default_zl.get())+1,19),15))
         self.gb = tk.StringVar()
         self.gb.set('0Gb')
     
@@ -732,9 +735,7 @@ class Ortho4XP_Earth_Preview(tk.Toplevel):
              
         # Parent derived data
         self.parent=parent
-        self.custom_build_dir=self.parent.custom_build_dir.get()
-        self.grouped= self.custom_build_dir and self.custom_build_dir[-1]!='/'
-        self.working_dir=self.custom_build_dir if self.custom_build_dir else FNAMES.Tile_dir
+        self.set_working_dir()
         
         # Constants/Variable
         self.dico_tiles_todo={}
@@ -777,6 +778,9 @@ class Ortho4XP_Earth_Preview(tk.Toplevel):
             row+=1
         ttk.Button(self.frame_left,text='  Batch Build   ',command=self.batch_build).grid(row=row,column=0,padx=5,pady=5,sticky=N+S+E+W)
         row+=1
+        # Refresh window
+        ttk.Button(self.frame_left,text='    Refresh     ',command=self.refresh).grid(row=row,column=0,padx=5,pady=5,sticky=N+S+E+W)
+        row+=1
         # Exit
         ttk.Button(self.frame_left,text='      Exit      ',command=self.exit).grid(row=row,column=0,padx=5,pady=5,sticky=N+S+E+W)
         row+=1
@@ -809,38 +813,19 @@ class Ortho4XP_Earth_Preview(tk.Toplevel):
         
         self.threaded_preview()
         return
-    
-    def trash(self):
-        if self.v_['OSM data'].get(): 
-            try: shutil.rmtree(FNAMES.osm_dir(self.active_lat,self.active_lon))
-            except Exception as e:
-                UI.vprint(3,e)
-        if self.v_['Mask data'].get():
-            try: shutil.rmtree(FNAMES.mask_dir(self.active_lat,self.active_lon))
-            except Exception as e:
-                UI.vprint(3,e)
-        if self.v_['Jpeg imagery'].get():
-            try: shutil.rmtree(os.path.join(FNAMES.Imagery_dir,FNAMES.long_latlon(self.active_lat,self.active_lon)))
-            except Exception as e:
-                UI.vprint(3,e)
-        if self.v_['Tile (whole)'].get() and not self.grouped:
-            try: shutil.rmtree(FNAMES.build_dir(self.active_lat,self.active_lon,self.custom_build_dir))
-            except Exception as e:
-                UI.vprint(3,e)
-            if (self.active_lat,self.active_lon) in self.dico_tiles_done:
-                for objid in self.dico_tiles_done[(self.active_lat,self.active_lon)]:
-                    self.canvas.delete(objid)
-                del(self.dico_tiles_done[(self.active_lat,self.active_lon)])
-        if self.v_['Tile (textures)'].get() and not self.grouped:
-            try: shutil.rmtree(os.path.join(FNAMES.build_dir(self.active_lat,self.active_lon,self.custom_build_dir),'textures'))
-            except Exception as e:
-                UI.vprint(3,e)
-        return
-    
-    
+        
+    def set_working_dir(self):
+        self.custom_build_dir=self.parent.custom_build_dir.get()
+        self.grouped= self.custom_build_dir and self.custom_build_dir[-1]!='/'
+        self.working_dir=self.custom_build_dir if self.custom_build_dir else FNAMES.Tile_dir
+        
+    def refresh(self):
+        self.set_working_dir()
+        self.threaded_preview()
+        return    
+     
     def threaded_preview(self):
         threading.Thread(target=self.preview_existing_tiles).start()
-
     
     def preview_existing_tiles(self):
         dico_color={11:'blue',12:'blue',13:'blue',14:'blue',15:'cyan',16:'green',17:'yellow',18:'orange',19:'red'}
@@ -893,7 +878,7 @@ class Ortho4XP_Earth_Preview(tk.Toplevel):
                                 self.canvas.itemconfig(self.dico_tiles_done[(lat,lon)][0],stipple='gray50')
         elif self.grouped and os.path.isdir(os.path.join(self.working_dir,'Earth nav data')):
             for dir_name in os.listdir(os.path.join(self.working_dir,'Earth nav data')):
-                for file_name in os.path.join(self.working_dir,'Earth nav data',dir_name):
+                for file_name in os.listdir(os.path.join(self.working_dir,'Earth nav data',dir_name)):
                     try:
                         lat=int(file_name[0:3])   
                         lon=int(file_name[3:7])              
@@ -901,20 +886,63 @@ class Ortho4XP_Earth_Preview(tk.Toplevel):
                         continue
                     [x0,y0]=GEO.wgs84_to_pix(lat+1,lon,self.earthzl)
                     [x1,y1]=GEO.wgs84_to_pix(lat,lon+1,self.earthzl)
-                    self.dico_tiles_done[(lat,lon)]=(self.canvas.create_rectangle(x0,y0,x1,y1,fill='blue',stipple='gray12'),)
+                    color='blue'
+                    content=''
+                    try:
+                        tmpf=open(os.path.join(self.working_dir,'Ortho4XP_'+FNAMES.short_latlon(lat,lon)+'.cfg'),'r')
+                        found_config=True
+                    except:
+                        found_config=False
+                    if found_config:                        
+                        prov=zl=''
+                        for line in tmpf.readlines():
+                            if line[:15]=='default_website':
+                                prov=line.split('=')[1][:-1]
+                            elif line[:10]=='default_zl':
+                                zl=int(line.split('=')[1][:-1])
+                                break
+                        tmpf.close()
+                        if (prov and zl):
+                            color=dico_color[zl]
+                            content=prov+'\n'+str(zl)
+                            self.dico_tiles_done[(lat,lon)]=(\
+                                self.canvas.create_rectangle(x0,y0,x1,y1,fill=color,stipple='gray12'),\
+                                self.canvas.create_text((x0+x1)//2,(y0+y1)//2,justify=CENTER,text=content)\
+                                )
             link=os.path.join(CFG.custom_scenery_dir,'zOrtho4XP_'+os.path.basename(self.working_dir))
             if os.path.isdir(link):
                 if os.path.samefile(os.path.realpath(link),os.path.realpath(self.working_dir)):
-                    for tile in self.dico_tiles_done:
-                        self.canvas.itemconfig(self.dico_tiles_done[tile][0],stipple='gray50')
+                    for (lat0,lon0) in self.dico_tiles_done:
+                        self.canvas.itemconfig(self.dico_tiles_done[(lat0,lon0)][0],stipple='gray50')
         return
-
-   
-    def refresh(self):
-        self.set_working_dir()
-        self.preview_existing_tiles()
-        return      
-
+    
+    def trash(self):
+        if self.v_['OSM data'].get(): 
+            try: shutil.rmtree(FNAMES.osm_dir(self.active_lat,self.active_lon))
+            except Exception as e:
+                UI.vprint(3,e)
+        if self.v_['Mask data'].get():
+            try: shutil.rmtree(FNAMES.mask_dir(self.active_lat,self.active_lon))
+            except Exception as e:
+                UI.vprint(3,e)
+        if self.v_['Jpeg imagery'].get():
+            try: shutil.rmtree(os.path.join(FNAMES.Imagery_dir,FNAMES.long_latlon(self.active_lat,self.active_lon)))
+            except Exception as e:
+                UI.vprint(3,e)
+        if self.v_['Tile (whole)'].get() and not self.grouped:
+            try: shutil.rmtree(FNAMES.build_dir(self.active_lat,self.active_lon,self.custom_build_dir))
+            except Exception as e:
+                UI.vprint(3,e)
+            if (self.active_lat,self.active_lon) in self.dico_tiles_done:
+                for objid in self.dico_tiles_done[(self.active_lat,self.active_lon)]:
+                    self.canvas.delete(objid)
+                del(self.dico_tiles_done[(self.active_lat,self.active_lon)])
+        if self.v_['Tile (textures)'].get() and not self.grouped:
+            try: shutil.rmtree(os.path.join(FNAMES.build_dir(self.active_lat,self.active_lon,self.custom_build_dir),'textures'))
+            except Exception as e:
+                UI.vprint(3,e)
+        return
+    
     def select_tile(self,event):
         x=self.canvas.canvasx(event.x)
         y=self.canvas.canvasy(event.y)
@@ -951,17 +979,21 @@ class Ortho4XP_Earth_Preview(tk.Toplevel):
             target=os.path.realpath(self.working_dir)
             if os.path.isdir(link) and os.path.samefile(os.path.realpath(link),os.path.realpath(self.working_dir)):
                 os.remove(link)
-                self.canvas.itemconfig(self.dico_tiles_done[(lat,lon)][0],stipple='gray12')
+                for (lat0,lon0) in self.dico_tiles_done:
+                    self.canvas.itemconfig(self.dico_tiles_done[(lat0,lon0)][0],stipple='gray12')
                 return
         # in case this was a broken link        
         try: os.remove(link)
         except: pass
         if ('dar' in sys.platform) or ('win' not in sys.platform): # Mac and Linux
             os.system("ln -s "+' "'+target+'" "'+link+'"')
-            
         else:
             os.system('MKLINK /J "'+link+'" "'+target+'"')
-        self.canvas.itemconfig(self.dico_tiles_done[(lat,lon)][0],stipple='gray50')
+        if not self.grouped:
+            self.canvas.itemconfig(self.dico_tiles_done[(lat,lon)][0],stipple='gray50')
+        else:
+            for (lat0,lon0) in self.dico_tiles_done:
+                self.canvas.itemconfig(self.dico_tiles_done[(lat0,lon0)][0],stipple='gray50')    
         return 
 
 
@@ -1012,10 +1044,14 @@ class Ortho4XP_Earth_Preview(tk.Toplevel):
         else:
            self.nx0=nx0
            self.ny0=ny0 
-           self.canvas.delete(self.canv_imgNW)
-           self.canvas.delete(self.canv_imgNE)
-           self.canvas.delete(self.canv_imgSW)
-           self.canvas.delete(self.canv_imgSE)
+           try: self.canvas.delete(self.canv_imgNW)
+           except:pass
+           try: self.canvas.delete(self.canv_imgNE)
+           except:pass
+           try: self.canvas.delete(self.canv_imgSW)
+           except:pass
+           try: self.canvas.delete(self.canv_imgSE)
+           except:pass
            fargs_rc=[nx0,ny0]
            self.rc_thread=threading.Thread(target=self.draw_canvas,args=fargs_rc)
            self.rc_thread.start()

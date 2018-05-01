@@ -12,6 +12,8 @@ import O4_OSM_Utils as OSM
 import O4_Vector_Utils as VECT
 import O4_Mesh_Utils as MESH
 
+mask_altitude_above=1.5
+
 ##############################################################################
 def needs_mask(tile, til_x_left,til_y_top,zoomlevel,*args):
     if int(zoomlevel)<tile.mask_zl:
@@ -83,7 +85,9 @@ def build_masks(tile):
         except:
             UI.lvprint(1,"Mesh file ",mesh_file_name," could not be read. Skipped.")
             continue
-        for i in range(0,4):
+        mesh_version=float(f_mesh.readline().strip().split()[-1])
+        has_water = 7 if mesh_version>=1.3 else 3
+        for i in range(3):
             f_mesh.readline()
         nbr_pt_in=int(f_mesh.readline())
         pt_in=numpy.zeros(5*nbr_pt_in,'float')
@@ -106,8 +110,7 @@ def build_masks(tile):
                 if UI.red_flag: UI.exit_message_and_bottom_line(); return 0
             (n1,n2,n3,tri_type)=[int(x)-1 for x in f_mesh.readline().split()[:4]]
             tri_type+=1
-            tri_type = (tri_type & 2) or (tri_type & 1)
-            if (not tri_type) or (tri_type==1 and not tile.use_masks_for_inland):
+            if (not tri_type) or (not (tri_type & has_water)) or ((tri_type & has_water)<2 and not tile.use_masks_for_inland):
                 continue
             (lon1,lat1)=pt_in[5*n1:5*n1+2]
             (lon2,lat2)=pt_in[5*n2:5*n2+2]
@@ -183,8 +186,7 @@ def build_masks(tile):
                     if UI.red_flag: UI.exit_message_and_bottom_line(); return 0
                 (n1,n2,n3,tri_type)=[int(x)-1 for x in f_mesh.readline().split()[:4]]
                 tri_type+=1
-                tri_type = (tri_type & 2) or (tri_type & 1)
-                if not (tri_type==1):
+                if not (tri_type & has_water)==1:
                     continue
                 (lon1,lat1)=pt_in[5*n1:5*n1+2]
                 (lon2,lat2)=pt_in[5*n2:5*n2+2]
@@ -259,7 +261,7 @@ def build_masks(tile):
             (latmin,lonmax)= GEO.pix_to_wgs84(px0+6144,py0+6144,tile.mask_zl)
             (x03857,y03857)=GEO.transform('4326','3857',lonmin,latmax)
             (x13857,y13857)=GEO.transform('4326','3857',lonmax,latmin)
-            ((lonmin,lonmax,latmin,latmax),demarr4326)=tile.dem.super_level_set(1,(lonmin,lonmax,latmin,latmax))  
+            ((lonmin,lonmax,latmin,latmax),demarr4326)=tile.dem.super_level_set(mask_altitude_above,(lonmin,lonmax,latmin,latmax))  
             if demarr4326.any():
                 demim4326=Image.fromarray(demarr4326.astype(numpy.uint8)*255)
                 del(demarr4326)
@@ -427,19 +429,21 @@ def triangulation_to_image(name,pixel_size,grid_size_or_bbox):
 if __name__ == '__main__':
     UI.log=False
     UI.verbosity=2
-    Syntax='Syntax :\n--------\n(PYTHON) extent_code [OSM query] pixel_size buffer_size blur_size [EPSG code]\nAll three sizes in meters, buffer_size can be negative too.\nIf OSM query is not used, data must be cached in an extent_code.osm.bz2 file. EPSG code defaults to 4326, if it is used the OSM query needs to be used too.\n\nExample :(from a subdirectory of Extents)\n---------\npython3 ../../src/O4_Mask_Utils.py Suisse rel[\"admin_level\"=\"2\"][\"name:fr\"=\"Suisse\"] 20 0 400'
-    epsg_code='4326'
-    name=sys.argv[1]
-    cached_file_name=name+'.osm.bz2'
+    Syntax='Syntax :\n--------\n(PYTHON) extent_code  pixel_size buffer_size blur_size [OSM query] [EPSG code] [bbox_or_grid_size]\nAll three sizes in meters, \
+            buffer_size can be negative too.\nIf OSM query is not used, data must be cached in an extent_code.osm.bz2 file. EPSG code defaults \
+            to 4326, if it is used the OSM query needs to be used too.\n\nExample :(from a subdirectory of Extents)\
+            \n---------\npython3 ../../src/O4_Mask_Utils.py Suisse  20 0 400 rel[\"admin_level\"=\"2\"][\"name:fr\"=\"Suisse\"]'
     nargs=len(sys.argv)
     if not nargs in (5,6,7,8):
         print(Syntax)
         sys.exit(1)
+    name=sys.argv[1]
+    cached_file_name=name+'.osm.bz2'
     if nargs==5 and not os.path.exists(cached_file_name):
         print(Syntax)
         sys.exit(1)
-    if nargs in (6,7):
-        query_tmp=sys.argv[2]
+    if nargs in (6,7,8):
+        query_tmp=sys.argv[5]
         query=''
         for char in query_tmp:
             if char=='[':
@@ -453,20 +457,22 @@ if __name__ == '__main__':
     else:
         query=None
     if nargs in (7,8):
-        epsg_code=sys.argv[3]
-    if nargs==8:
-        grid_size_or_bbox = eval(sys.argv[4])
+        epsg_code=sys.argv[6]
     else:
-        grid_size_or_bbox = 0.02 if epsg_code=='4326' else 2000 
-    pixel_size=float(sys.argv[nargs-3])
-    buffer_width=float(sys.argv[nargs-2])/pixel_size
-    mask_width=int(int(sys.argv[nargs-1])/pixel_size)
+        epsg_code='4326'
+    if nargs==8:
+        grid_size_or_bbox = eval(sys.argv[7])
+    else:
+        grid_size_or_bbox= 0.02 if epsg_code=='4326' else 2000 
+    pixel_size=float(sys.argv[2])
+    buffer_width=float(sys.argv[3])/pixel_size
+    mask_width=int(int(sys.argv[4])/pixel_size)
     pixel_size = pixel_size/111120 if epsg_code=='4326' else pixel_size # assuming meters if not degrees
     vector_map=VECT.Vector_Map()
     osm_layer=OSM.OSM_layer()
     if not os.path.exists(cached_file_name):
         print("OSM query...")
-        if not OSM.OSM_query_to_OSM_layer(query,'',osm_layer,cached_file_name=cached_file_name):
+        if not OSM.OSM_query_to_OSM_layer(query,'',osm_layer,'all',cached_file_name=cached_file_name):
             print("OSM query failed. Exiting.")
             del(vector_map)
             time.sleep(1)
@@ -527,6 +533,7 @@ if __name__ == '__main__':
         else: # buffer width can be negative
             mask_im=Image.fromarray((numpy.array(mask_im,dtype=numpy.uint8)==255).astype(numpy.uint8)*255)
     if mask_width:
+        mask_width+=1
         UI.vprint(1,"Blur of the mask...")
         img_array=numpy.array(mask_im,dtype=numpy.uint8)
         kernel=numpy.ones(int(mask_width))/int(mask_width)
