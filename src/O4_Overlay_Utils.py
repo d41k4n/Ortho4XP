@@ -8,7 +8,7 @@ import O4_UI_Utils as UI
 
 # the following is meant to be modified directly by users who need it
 ovl_exclude_pol=(0,)
-ovl_exclude_net=()
+#ovl_exclude_net=()
 
 # the following is meant to be modified by the CFG module at run time
 custom_overlay_src=''
