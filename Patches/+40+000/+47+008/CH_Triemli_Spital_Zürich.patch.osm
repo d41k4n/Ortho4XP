@@ -1,0 +1,44 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<osm version='0.6' upload='true' generator='JOSM'>
+  <node id='-221' action='modify' visible='true' lat='47.36580239892' lon='8.49928452612' />
+  <node id='-223' action='modify' visible='true' lat='47.36588687544' lon='8.499488374' />
+  <node id='-225' action='modify' visible='true' lat='47.36596771844' lon='8.49954872371' />
+  <node id='-227' action='modify' visible='true' lat='47.36613031241' lon='8.49948971511' />
+  <node id='-229' action='modify' visible='true' lat='47.36624476374' lon='8.49944143535' />
+  <node id='-231' action='modify' visible='true' lat='47.36635830647' lon='8.49934621693' />
+  <node id='-233' action='modify' visible='true' lat='47.36642007361' lon='8.49918260218' />
+  <node id='-235' action='modify' visible='true' lat='47.36640917354' lon='8.49895461441' />
+  <node id='-237' action='modify' visible='true' lat='47.36638101499' lon='8.49875344873' />
+  <node id='-239' action='modify' visible='true' lat='47.36634649804' lon='8.49858715178' />
+  <node id='-241' action='modify' visible='true' lat='47.36659901626' lon='8.49845304132' />
+  <node id='-243' action='modify' visible='true' lat='47.3665463327' lon='8.4982384646' />
+  <node id='-245' action='modify' visible='true' lat='47.36528463661' lon='8.49883927942' />
+  <node id='-247' action='modify' visible='true' lat='47.3653400465' lon='8.49905787946' />
+  <node id='-249' action='modify' visible='true' lat='47.36511023132' lon='8.49917723776' />
+  <node id='-251' action='modify' visible='true' lat='47.36510205606' lon='8.49979816915' />
+  <node id='-253' action='modify' visible='true' lat='47.36514929089' lon='8.49975257159' />
+  <node id='-255' action='modify' visible='true' lat='47.36514656581' lon='8.49958225132' />
+  <way id='-257' action='modify' visible='true'>
+    <nd ref='-221' />
+    <nd ref='-223' />
+    <nd ref='-225' />
+    <nd ref='-227' />
+    <nd ref='-229' />
+    <nd ref='-231' />
+    <nd ref='-233' />
+    <nd ref='-235' />
+    <nd ref='-237' />
+    <nd ref='-239' />
+    <nd ref='-241' />
+    <nd ref='-243' />
+    <nd ref='-245' />
+    <nd ref='-247' />
+    <nd ref='-249' />
+    <nd ref='-251' />
+    <nd ref='-253' />
+    <nd ref='-255' />
+    <nd ref='-221' />
+    <tag k='aeroway' v='heliport' />
+    <tag k='altitude' v='mean' />
+  </way>
+</osm>

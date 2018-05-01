@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<osm version='0.6' upload='true' generator='JOSM'>
+  <node id='-90130' action='modify' visible='true' lat='47.25596334804' lon='9.38543201315' />
+  <node id='-90132' action='modify' visible='true' lat='47.2557776587' lon='9.38573107945' />
+  <node id='-90134' action='modify' visible='true' lat='47.25563566054' lon='9.38552723157' />
+  <node id='-90136' action='modify' visible='true' lat='47.25582772207' lon='9.38524559962' />
+  <way id='-90138' action='modify' visible='true'>
+    <nd ref='-90130' />
+    <nd ref='-90132' />
+    <nd ref='-90134' />
+    <nd ref='-90136' />
+    <nd ref='-90130' />
+    <tag k='aeroway' v='heliport' />
+    <tag k='altitude' v='1522' />
+  </way>
+</osm>

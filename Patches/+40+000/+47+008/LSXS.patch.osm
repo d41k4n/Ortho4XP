@@ -1,0 +1,27 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<osm version='0.6' generator='JOSM'>
+  <node id='3885466086' timestamp='2015-12-10T00:53:27Z' uid='981115' user='d41k4n' version='1' changeset='35857371' lat='47.1694509' lon='8.7163828' />
+  <node id='3885466087' timestamp='2015-12-10T00:53:27Z' uid='981115' user='d41k4n' version='1' changeset='35857371' lat='47.1700455' lon='8.7147228' />
+  <node id='3885466088' timestamp='2015-12-10T00:53:27Z' uid='981115' user='d41k4n' version='1' changeset='35857371' lat='47.1701596' lon='8.7148023' />
+  <node id='3885466089' timestamp='2015-12-10T00:53:27Z' uid='981115' user='d41k4n' version='1' changeset='35857371' lat='47.1705171' lon='8.7138392' />
+  <node id='3885466090' timestamp='2015-12-10T00:53:27Z' uid='981115' user='d41k4n' version='1' changeset='35857371' lat='47.1707655' lon='8.7133208' />
+  <node id='3885466091' timestamp='2015-12-10T00:53:27Z' uid='981115' user='d41k4n' version='1' changeset='35857371' lat='47.1706991' lon='8.7132182' />
+  <node id='3885466092' timestamp='2015-12-10T00:53:27Z' uid='981115' user='d41k4n' version='1' changeset='35857371' lat='47.1704301' lon='8.7133355' />
+  <node id='3885466093' timestamp='2015-12-10T00:53:27Z' uid='981115' user='d41k4n' version='1' changeset='35857371' lat='47.1701666' lon='8.713285' />
+  <node id='3885466094' timestamp='2015-12-10T00:53:27Z' uid='981115' user='d41k4n' version='1' changeset='35857371' lat='47.1691172' lon='8.7161414' />
+  <node id='3885466095' timestamp='2015-12-10T00:53:27Z' uid='981115' user='d41k4n' version='1' changeset='35857371' lat='47.1705508' lon='8.7132557' />
+  <way id='385189695' action='modify' timestamp='2015-12-10T00:53:27Z' uid='981115' user='d41k4n' version='1' changeset='35857371'>
+    <nd ref='3885466086' />
+    <nd ref='3885466087' />
+    <nd ref='3885466088' />
+    <nd ref='3885466089' />
+    <nd ref='3885466090' />
+    <nd ref='3885466091' />
+    <nd ref='3885466095' />
+    <nd ref='3885466092' />
+    <nd ref='3885466093' />
+    <nd ref='3885466094' />
+    <nd ref='3885466086' />
+    <tag k='altitude' v='mean' />
+  </way>
+</osm>
