@@ -1,0 +1,9 @@
+# This definition is outdated and only provided for backwards compatibility
+# i.e. when re-creating DDS from old orthophoto
+request_type=tms
+url_template=https://wmts100.geo.admin.ch/1.0.0/ch.swisstopo.swissimage/default/current/3857/{zoom}/{y}/{x}.jpeg
+imagery_dir=normal
+#extent=CH
+fake_headers={'Host':'wmts100.geo.admin.ch','User-Agent': user_agent_generic,'Accept':'*/*','Accept-Language':'en-US,en;q=0.5','Accept-Encoding':'gzip,deflate','Referer':'https://map.geo.admin.ch','Origin':'https://map.geo.admin.ch','Connection':'keep-alive'}
+#GET https://wmts100.geo.admin.ch/1.0.0/ch.swisstopo.swissimage/default/current/3857/17/5/9.jpeg
+

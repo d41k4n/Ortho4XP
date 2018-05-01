@@ -1,0 +1,21 @@
+request_type=tms
+epsg_code=21781
+top_left_corner=420000.0 350000.0
+scaledenominator= 14285714.2857 13392857.1429 12500000.0 11607142.8571 10714285.7143 9821428.57143 8928571.42857 8035714.28571 7142857.14286 6250000.0 5357142.85714 4464285.71429 3571428.57143 2678571.42857 2321428.57143 1785714.28571 892857.142857 357142.857143 178571.428571 71428.5714286 35714.2857143 17857.1428571 8928.57142857 7142.85714286 5357.14285714 3571.42857143 1785.71428571 892.857142857 357.142857143
+tile_size=256
+url_template=https://wmts100.geo.admin.ch/1.0.0/ch.swisstopo.swissimage/default/current/21781/{zoom}/{y}/{x}.jpeg
+max_threads=16
+imagery_dir=grouped
+extent=CH
+fake_headers={'Host':'wmts100.geo.admin.ch','User-Agent': user_agent_generic,'Accept':'*/*','Accept-Language':'en-US,en;q=0.5','Accept-Encoding':'gzip,deflate','Referer':'https://map.geo.admin.ch','Origin':'https://map.geo.admin.ch','Connection':'keep-alive'}
+# color filter : balance medium 3 3 -5 saturation 30 brightness-contrast -20 8
+#GET https://wmts100.geo.admin.ch/1.0.0/ch.swisstopo.swissimage/default/current/2056/17/5/9.jpeg
+#Host: wmts100.geo.admin.ch
+#User-Agent: Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:58.0) Gecko/20100101 Firefox/58.0
+#Accept: */*
+#Accept-Language: en-US,en;q=0.5
+#Accept-Encoding: gzip, deflate, br
+#Referer: https://map.geo.admin.ch
+#Origin: https://map.geo.admin.ch
+#DNT: 1
+#Connection: keep-alive
