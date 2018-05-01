@@ -4,6 +4,8 @@ AltoAdige1415  AltoAdige   AltoAdige1415  medium
 Itris          Tirol       Itris          medium
 PCN06          Trentino    PCN06_N46E011  medium
 PCN06          Veneto      PCN06_N46E011  medium 
+CH             CH          none           medium
+BI             !CH         none           medium
 
 #Further ones might be as follows
 #OST Carinthia none medium
