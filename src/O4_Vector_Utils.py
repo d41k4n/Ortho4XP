@@ -295,7 +295,7 @@ class Vector_Map():
         f= open(node_file_name,'w')
         f.write(str(total_nodes)+' 2 1 0\n')
         for idx in sorted(self.nodes_dico.keys()):
-            f.write(str(idx)+' '+' '.join(['{:.15f}'.format(x) for x in (self.nodes_dico[idx][0],self.nodes_dico[idx][1],self.data_nodes[idx])])+'\n')
+            f.write(str(idx)+' '+' '.join(['{:.17f}'.format(x) for x in (self.nodes_dico[idx][0],self.nodes_dico[idx][1],self.data_nodes[idx])])+'\n')
         f.close() 
     
     def write_poly_file(self,poly_file_name): 
@@ -311,7 +311,7 @@ class Vector_Map():
         f.write('\n'+str(len(self.holes))+'\n')
         idx=1
         for hole in self.holes:        
-            f.write(str(idx)+' '+' '.join(['{:.15f}'.format(h) for h in hole])+'\n')
+            f.write(str(idx)+' '+' '.join(['{:.17f}'.format(h) for h in hole])+'\n')
             idx+=1
         total_seeds=numpy.sum([len(self.seeds[key]) for key in self.seeds])
         if total_seeds==0:
@@ -323,7 +323,7 @@ class Vector_Map():
                 (key,marker)=long_key
                 if key not in self.seeds: continue
                 for seed in self.seeds[key]:
-                    f.write(str(idx)+' '+' '.join(['{:.15f}'.format(s) for s in seed])+' '+str(marker)+'\n')
+                    f.write(str(idx)+' '+' '.join(['{:.17f}'.format(s) for s in seed])+' '+str(marker)+'\n')
                     idx+=1
         f.close()
         return 
@@ -704,6 +704,8 @@ def weighted_alt(node,alt_idx,alt_dico,dem):
         weight=numpy.exp(-dist/(2*width))
         alti+=numpy.polyval(leastsquarefit,linestring.project(pt,normalized=True))*weight
         weights+=weight
+    if weights<1e-6:
+        return dem.alt(node)
     if x<eps2 or x>1-eps2 or y<eps2 or y>1-eps2:
         alpha=min(x/eps2,(1-x)/eps2,y/eps2,(1-y)/eps2)
         return alpha*alti/weights+(1-alpha)*dem.alt(node)
@@ -721,24 +723,20 @@ def convolve_periodic(way,kernel):
 ##############################################################################
 
 ##############################################################################
-def min_bounding_rectangle(way_or_pol):
-    if isinstance(way_or_pol,numpy.ndarray):
-        pol=geometry.Polygon(way_or_pol).convex_hull
-    else:
-        pol=way_or_pol.convex_hull
-    way=numpy.array(pol.exterior.coords)*numpy.array([[scalx,1]]) 
+def min_bounding_rectangle(pol):
+    pol=affinity.affine_transform(pol,[scalx,0,0,1,0,0]).convex_hull
+    way=numpy.array(pol.exterior.coords) 
     edges=way[1:]-way[:-1]
     min_area=9999
     for i in range(len(edges)):
         angle=atan2(edges[i,1],edges[i,0])
-        (xmin,ymin,xmax,ymax)=affinity.rotate(pol,angle,origin=tuple(way[i]),use_radians=True).bounds
+        (xmin,ymin,xmax,ymax)=affinity.rotate(pol,-1*angle,origin=tuple(way[i]),use_radians=True).bounds
         test_area=(ymax-ymin)*(xmax-xmin)
         if test_area<min_area:
             min_area=test_area
             ret_val=(i,angle,xmin,ymin,xmax,ymax)
     (i,angle,xmin,ymin,xmax,ymax)=ret_val
-    outpol=affinity.rotate(geometry.box(xmin, ymin, xmax, ymax), -1*angle,origin=tuple(way[i]), use_radians=True)
-    return numpy.array(outpol.exterior.coords) if isinstance(way_or_pol,numpy.ndarray) else outpol
+    return affinity.affine_transform(affinity.rotate(geometry.box(xmin, ymin, xmax, ymax), angle,origin=tuple(way[i]), use_radians=True), [1/scalx,0,0,1,0,0])
 ##############################################################################  
   
 ##############################################################################
