@@ -18,6 +18,6 @@
     <nd ref='-31972' />
     <nd ref='-31974' />
     <nd ref='-31961' />
-    <tag k='altitude' v='mean' />
+    <tag k='cst_alt_rel' v='0' />
   </way>
 </osm>
