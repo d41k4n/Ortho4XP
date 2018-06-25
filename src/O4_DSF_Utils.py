@@ -10,7 +10,6 @@ import struct
 import hashlib
 import O4_File_Names as FNAMES
 import O4_Geo_Utils as GEO
-import O4_Imagery_Utils as IMG
 import O4_Mask_Utils as MASK
 import O4_UI_Utils as UI
 
@@ -18,7 +17,7 @@ quad_init_level=3
 quad_capacity_high=50000
 quad_capacity_low=35000
 
-experimental_water_zl=12
+experimental_water_zl=14
 experimental_water_provider_code='SEA'
 
 ##############################################################################
@@ -159,20 +158,18 @@ def create_terrain_file(tile,texture_file_name,til_x_left,til_y_top,zoomlevel,pr
     ter_file_name=texture_file_name[:-4]+suffix+'.ter'
     with open(os.path.join(tile.build_dir,'terrain',ter_file_name),'w') as f:
         f.write('A\n800\nTERRAIN\n\n')
-        [lat_med,lon_med]=GEO.gtile_to_wgs84(til_x_left+4,til_y_top+4,zoomlevel)
-        texture_approx_size=GEO.webmercator_pixel_size(lat_med,zoomlevel)*4096
+        [lat_med,lon_med]=GEO.gtile_to_wgs84(til_x_left+8,til_y_top+8,zoomlevel)
+        texture_approx_size=int(GEO.webmercator_pixel_size(lat_med,zoomlevel)*4096)
         f.write('LOAD_CENTER '+'{:.5f}'.format(lat_med)+' '\
                +'{:.5f}'.format(lon_med)+' '\
                +str(texture_approx_size)+' 4096\n')
-        if tri_type in (1,2):
-            f.write('WET\n')
         f.write('BASE_TEX_NOWRAP ../textures/'+texture_file_name+'\n')
         if tri_type in (1,2) and not is_overlay: # experimental water
-            f.write('TEXTURE_NORMAL '+str(2**(17-zoomlevel))+' ../textures/water_normal_map.png\n')
+            f.write('TEXTURE_NORMAL '+str(2**(17-zoomlevel))+' ../textures/water_normal_map.dds\n')
             f.write('GLOBAL_specular 1.0\n')
             f.write('NORMAL_METALNESS\n')
-            if not os.path.exists(os.path.join(tile.build_dir,'textures','water_normal_map.png')):
-                shutil.copy(os.path.join(FNAMES.Utils_dir,'water_normal_map.png'),os.path.join(tile.build_dir,'textures'))
+            if not os.path.exists(os.path.join(tile.build_dir,'textures','water_normal_map.dds')):
+                shutil.copy(os.path.join(FNAMES.Utils_dir,'water_normal_map.dds'),os.path.join(tile.build_dir,'textures'))
         elif tri_type==1 or (tri_type==2 and is_overlay=='ratio_water'): #constant transparency level       
             f.write('BORDER_TEX ../textures/water_transition.png\n')
             if not os.path.exists(os.path.join(tile.build_dir,'textures','water_transition.png')):
@@ -181,11 +178,12 @@ def create_terrain_file(tile,texture_file_name,til_x_left,til_y_top,zoomlevel,pr
             f.write('LOAD_CENTER_BORDER '+'{:.5f}'.format(lat_med)+' '\
                +'{:.5f}'.format(lon_med)+' '+str(texture_approx_size)+' '+str(4096//2**(zoomlevel-tile.mask_zl))+'\n')
             f.write('BORDER_TEX ../textures/'+FNAMES.mask_file(til_x_left,til_y_top,zoomlevel,provider_code)+'\n')
-        else: #land
-            if tile.use_decal_on_terrain:
-                f.write('DECAL_LIB lib/g10/decals/maquify_1_green_key.dcl\n')
-            if not tile.terrain_casts_shadows:
-                f.write('NO_SHADOW\n')
+        elif tile.use_decal_on_terrain:
+            f.write('DECAL_LIB lib/g10/decals/maquify_1_green_key.dcl\n')
+        if tri_type in (1,2):
+            f.write('WET\n')
+        if tri_type in (1,2) or not tile.terrain_casts_shadows:
+            f.write('NO_SHADOW\n')
         return ter_file_name
 ##############################################################################
 
@@ -301,7 +299,7 @@ def build_dsf(tile,download_queue):
         bary_lon=(node_coords[5*n1]+node_coords[5*n2]+node_coords[5*n3])/3
         bary_lat=(node_coords[5*n1+1]+node_coords[5*n2+1]+node_coords[5*n3+1])/3
         texture_attributes=dico_customzl[GEO.wgs84_to_orthogrid(bary_lat,bary_lon,tile.mesh_zl)]
-        # Triangles whith type>=8 are set for type=0, and type between 2 and 7 are set to 2 (mask) 
+        # Triangles of mixed types are set for water in priority (to avoid water cut by solid roads), and others are set for type=0 
         tri_type = (tri_type & has_water) and (2*((tri_type & has_water)>1 or tile.use_masks_for_inland) or 1)
         # The entries for the terrain and texture main dictionnaries
         terrain_attributes=(texture_attributes,tri_type)
@@ -421,7 +419,8 @@ def build_dsf(tile,download_queue):
                     textured_tris[0]['cross-pool'].extend(tri_p)
             # II. Low resolution texture with global coverage        
             if tri_type==2 and ((tile.experimental_water & 2) or tile.add_low_res_sea_ovl): # experimental water over sea
-                sea_zl=int(IMG.providers_dict['SEA']['max_zl'])
+                #sea_zl=int(IMG.providers_dict['SEA']['max_zl'])
+                sea_zl=experimental_water_zl
                 (til_x_left,til_y_top)=GEO.wgs84_to_orthogrid(bary_lat,bary_lon,sea_zl)
                 texture_attributes=(til_x_left,til_y_top,sea_zl,'SEA')
                 terrain_attributes=(texture_attributes,tri_type)
@@ -504,7 +503,7 @@ def build_dsf(tile,download_queue):
             size_of_geod_atom+=21+dsf_pool_plane[k]*(9+2*dsf_pool_length[k])
     UI.vprint(2,"     Size of DEFN atom : "+str(size_of_defn_atom)+" bytes.")    
     UI.vprint(2,"     Size of GEOD atom : "+str(size_of_geod_atom)+" bytes.")    
-    f=open(dsf_file_name,'wb')
+    f=open(dsf_file_name+'.tmp','wb')
     f.write(b'XPLNEDSF')
     f.write(struct.pack('<I',1))
     
@@ -656,13 +655,13 @@ def build_dsf(tile,download_queue):
     if UI.red_flag: UI.vprint(1,"DSF construction interrupted."); return 0   
     
     f.close()
-    f=open(dsf_file_name,'rb')
+    f=open(dsf_file_name+'.tmp','rb')
     data=f.read()
     m=hashlib.md5()
     m.update(data)
     md5sum=m.digest()
     f.close()
-    f=open(dsf_file_name,'ab')
+    f=open(dsf_file_name+'.tmp','ab')
     f.write(md5sum)
     f.close()
     UI.progress_bar(1,100)
