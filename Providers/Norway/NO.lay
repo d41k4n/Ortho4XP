@@ -1,0 +1,10 @@
+# This definition is outdated and only provided for backwards compatibility
+# i.e. when re-creating DDS from old orthophoto
+#request_type=tms
+grid_type=webmercator
+url_template=https://waapi.webatlas.no/maptiles/tiles/webatlas-orto-newup/wa_grid/{zoom}/{x}/{y}.jpeg?APITOKEN=9da664c7-e5b9-4dc7-a093-7ef0f90563c0
+imagery_dir=normal
+#extent=NO
+#fake_headers={'Host':'waapi.webatlas.no','User-Agent': user_agent_generic,'Accept':'*/*','Accept-Language':'en-US,en;q=0.5','Accept-Encoding':'gzip,deflate','Referer':'https://waapi.webatlas.no','Origin':'waapi.webatlas.no','Connection':'keep-alive'}
+
+
