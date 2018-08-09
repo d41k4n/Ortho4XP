@@ -1,0 +1,23 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<osm version='0.6' generator='JOSM'>
+  <node id='-39497' action='modify' lat='68.4516466' lon='17.5328784' />
+  <node id='-39498' action='modify' lat='68.4511448' lon='17.5331886' />
+  <node id='-39499' action='modify' lat='68.4511356' lon='17.5322078' />
+  <node id='-39500' action='modify' lat='68.451075' lon='17.5313521' />
+  <node id='-39501' action='modify' lat='68.4516061' lon='17.5308616' />
+  <node id='-39502' action='modify' lat='68.4516138' lon='17.5309596' />
+  <node id='-39503' action='modify' lat='68.4516411' lon='17.531307' />
+  <way id='-39496' action='modify'>
+    <nd ref='-39497' />
+    <nd ref='-39498' />
+    <nd ref='-39499' />
+    <nd ref='-39500' />
+    <nd ref='-39501' />
+    <nd ref='-39502' />
+    <nd ref='-39503' />
+    <nd ref='-39497' />
+    <tag k='aeroway' v='heliport' />
+    <tag k='cst_alt_rel' v='0' />
+    <tag k='name' v='Narvik Djupvik Heliport' />
+  </way>
+</osm>
