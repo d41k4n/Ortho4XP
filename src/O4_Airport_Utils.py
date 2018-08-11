@@ -10,7 +10,8 @@ import O4_Geo_Utils as GEO
 import O4_DEM_Utils as DEM
 import O4_File_Names as FNAMES
 
-runway_chunks=50
+runway_chunks=100   # how much chunks to split a runway longitudinally, ... 
+chunk_min_size=10   # as long as the chunks do not get smaller than this (in meters) .
 
 def discover_airport_names(airport_layer,dico_airports): 
     for osmtype in ('r','w','n'):
@@ -121,12 +122,15 @@ def sort_and_reconstruct_runways(tile,airport_layer,dico_airports):
         for wayid in dico_airports[airport]['runway']:
             if airport_layer.dicosmw[wayid][0]==airport_layer.dicosmw[wayid][-1]:
                 runway_pol=geometry.Polygon(numpy.round(numpy.array([airport_layer.dicosmn[nodeid] for nodeid in airport_layer.dicosmw[wayid]])-numpy.array([tile.lon,tile.lat]),7))
-                if not runway_pol.is_empty and runway_pol.is_valid:
-                    runway_pol_rect=VECT.min_bounding_rectangle(runway_pol) 
-                    discrep=runway_pol_rect.hausdorff_distance(runway_pol)
-                    if discrep>0.0008:
-                        UI.lvprint(2,"Bad runway (geometry too far from a rectangle) close to",airport,"at",dico_airports[airport]['repr_node'])
-                        continue    
+                if not runway_pol.is_empty and runway_pol.is_valid and runway_pol.area>1e-7:
+                    runway_pol_rect=VECT.min_bounding_rectangle(runway_pol)
+                    if wayid not in airport_layer.dicosmtags['w'] or 'custom' not in  airport_layer.dicosmtags['w'][wayid]:
+                        discrep=runway_pol_rect.hausdorff_distance(runway_pol)
+                        if discrep>0.0008:
+                            UI.logprint("Bad runway (geometry too far from a rectangle) close to",airport,"at",dico_airports[airport]['repr_node'])
+                            UI.vprint(1,"   !Bad runway (geometry too far from a rectangle) close to",airport,"at",dico_airports[airport]['repr_node'])
+                            UI.vprint(1,"   !You may correct it editing the file ",FNAMES.osm_cached(tile.lat, tile.lon, 'airports'),"in JOSM.")
+                            continue    
                     rectangle=numpy.array(VECT.min_bounding_rectangle(runway_pol).exterior.coords)
                     if VECT.length_in_meters(rectangle[0:2])<VECT.length_in_meters(rectangle[1:3]):
                         runway_start=(rectangle[0]+rectangle[1])/2
@@ -137,6 +141,11 @@ def sort_and_reconstruct_runways(tile,airport_layer,dico_airports):
                         runway_end=(rectangle[0]+rectangle[3])/2
                         runway_width=VECT.length_in_meters(rectangle[1:3])
                     runways_as_area.append((runway_pol,runway_start,runway_end,runway_width))
+                else:
+                    UI.logprint(1,"Bad runway (geometry invalid or going back over itself) close to",airport,"at",dico_airports[airport]['repr_node'])
+                    UI.vprint(1,"   !Bad runway (geometry invalid or going back over itself) close to",airport,"at",dico_airports[airport]['repr_node'])
+                    UI.vprint(1,"   !You may correct it editing the file ",FNAMES.osm_cached(tile.lat, tile.lon, 'airports'),"in JOSM.")
+                    continue   
             else:
                 linear.append(airport_layer.dicosmw[wayid])
                 try: linear_width.append(float(airport_layer.dicosmtags['w'][wayid]['width']))
@@ -186,12 +195,15 @@ def sort_and_reconstruct_runways(tile,airport_layer,dico_airports):
                 width=30+runway_length//1000
             pol=geometry.Polygon(VECT.buffer_simple_way(numpy.vstack((runway_start,runway_end)),width))
             keep_this=True
-            for pol2 in runways_as_area[:]:
+            i=0
+            for pol2 in runways_as_area:
                 if (pol2[0].intersection(pol)).area>0.6*min(pol.area,pol2[0].area):
-                    # choose exactly one between the following two lines...
-                    runways_as_area.remove(pol2)
-                    #keep_this=False
+                    # update area one with start end and width from linear one
+                    runways_as_area[i]=(pol2[0],runway_start,runway_end,width)
+                    # and then skip the linear one
+                    keep_this=False
                     break
+                i+=1
             if keep_this: runways_as_line.append((pol, runway_start,runway_end,width))
         ##  Save this into the dico_airport dictionnary
         runway=VECT.ensure_MultiPolygon(ops.cascaded_union([item[0] for item in runways_as_area+runways_as_line]))
@@ -241,13 +253,15 @@ def build_apron_areas(tile,airport_layer,dico_airports):
         for wayid in wayid_list: 
             try:
                 pol=geometry.Polygon(numpy.round(numpy.array([airport_layer.dicosmn[nodeid] for nodeid in airport_layer.dicosmw[wayid]])-numpy.array([[tile.lon,tile.lat]]),7))
-                if not pol.is_valid: continue
+                if not pol.is_valid: 
+                    UI.vprint(2,"Unable to turn apron area to polygon, close to",airport_layer.dicosmn[airport_layer.dicosmw[wayid][0]]) 
+                    continue
             except:
                 UI.vprint(2,"Unable to turn apron area to polygon, close to",airport_layer.dicosmn[airport_layer.dicosmw[wayid][0]]) 
                 continue
             aprons.append(pol)
         aprons=VECT.ensure_MultiPolygon(ops.cascaded_union(aprons))
-        dico_airports[airport]['apron']=aprons
+        dico_airports[airport]['apron']=(aprons,dico_airports[airport]['apron'])
     return
 ####################################################################################################    
 
@@ -265,7 +279,7 @@ def build_taxiway_areas(tile,airport_layer,dico_airports):
 def update_airport_boundaries(tile,dico_airports):
     for airport in dico_airports:
         apt=dico_airports[airport]
-        boundary=ops.cascaded_union([apt['taxiway'][0],apt['apron'],apt['hangar'],apt['runway'][0]])
+        boundary=ops.cascaded_union([apt['taxiway'][0],apt['apron'][0],apt['hangar'],apt['runway'][0]])
         if apt['boundary']:
             apt['boundary']=VECT.ensure_MultiPolygon(ops.cascaded_union([affinity.translate(apt['boundary'],-tile.lon,-tile.lat),boundary]).buffer(0).simplify(0.00001))
         else:
@@ -295,6 +309,21 @@ def list_airports_and_runways(dico_airports):
         else:
             UI.vprint(1,'  ','{:6s}'.format('****'),'{:60s}'.format(dico_airports[airport]['name']),runway_str,'lat=','{:.2f}'.format(dico_airports[airport]['repr_node'][1])+',','lon=','{:.2f}'.format(dico_airports[airport]['repr_node'][0]))
     return
+####################################################################################################
+
+####################################################################################################
+def build_airport_array(tile,dico_airports):
+    airport_array=numpy.zeros((1001,1001),dtype=numpy.bool)
+    for airport in dico_airports:
+        (xmin,ymin,xmax,ymax)=dico_airports[airport]['boundary'].bounds
+        x_shift=1500*GEO.m_to_lon(tile.lat) 
+        y_shift=1500*GEO.m_to_lat
+        colmin=max(round((xmin-x_shift)*1000),0)
+        colmax=min(round((xmax+x_shift)*1000),1000)
+        rowmax=min(round(((1-ymin)+y_shift)*1000),1000)
+        rowmin=max(round(((1-ymax)-y_shift)*1000),0)
+        airport_array[rowmin:rowmax+1,colmin:colmax+1]=True 
+    return airport_array
 ####################################################################################################
 
 ####################################################################################################
@@ -337,7 +366,7 @@ def smooth_raster_over_airports(tile,dico_airports,preserve_boundary=True):
         Y1=y1-rowmin*ystep
         airport_im=Image.new('L',(upscale*(colmax-colmin+1),upscale*(rowmax-rowmin+1)))
         airport_draw=ImageDraw.Draw(airport_im)
-        full_area=VECT.ensure_MultiPolygon(ops.cascaded_union([dico_airports[airport]['boundary'],dico_airports[airport]['runway'][0],dico_airports[airport]['hangar'],dico_airports[airport]['taxiway'][0],dico_airports[airport]['apron']]))
+        full_area=VECT.ensure_MultiPolygon(ops.cascaded_union([dico_airports[airport]['boundary'],dico_airports[airport]['runway'][0],dico_airports[airport]['hangar'],dico_airports[airport]['taxiway'][0],dico_airports[airport]['apron'][0]]))
         for polygon in full_area:
             exterior_pol_pix=[(round(upscale*(X-X0)/xstep),round(upscale*(Y1-Y)/ystep)) for (X,Y) in polygon.exterior.coords]
             airport_draw.polygon(exterior_pol_pix,fill='white')
@@ -359,8 +388,8 @@ def smooth_raster_over_airports(tile,dico_airports,preserve_boundary=True):
 ####################################################################################################
 
 ####################################################################################################
-def encode_runways_and_taxiways(tile,airport_layer,dico_airports,vector_map,patches_list):
-    seeds=[]
+def encode_runways_taxiways_and_aprons(tile,airport_layer,dico_airports,vector_map,patches_list):
+    seeds={'RUNWAY':[],'TAXIWAY':[],'APRON':[]}
     total_rwy=0
     total_taxi=0
     for airport in dico_airports:
@@ -381,6 +410,7 @@ def encode_runways_and_taxiways(tile,airport_layer,dico_airports,vector_map,patc
             runway_length=VECT.length_in_meters(center_way)
             steps = int(max(runway_chunks,runway_length//7))
             (linestring,polyfit)=VECT.least_square_fit_altitude_along_way(center_way,steps,tile.dem,weights=True)
+            #(linestring,polyfit)=VECT.spline_fit_altitude_along_way(center_way,steps,tile.dem)#,weights=True)
             alt_idx.insert(id,linestring.bounds)
             alt_dico[id]=(linestring,polyfit,runway_width)
             id+=1
@@ -389,6 +419,7 @@ def encode_runways_and_taxiways(tile,airport_layer,dico_airports,vector_map,patc
             taxiway_length=VECT.length_in_meters(taxiway)
             steps = int(max(runway_chunks,taxiway_length//7))
             (linestring,polyfit)=VECT.least_square_fit_altitude_along_way(taxiway,steps,tile.dem)
+            #(linestring,polyfit)=VECT.spline_fit_altitude_along_way(taxiway,steps,tile.dem)
             alt_idx.insert(id,linestring.bounds)
             alt_dico[id]=(linestring,polyfit,15)
             id+=1
@@ -397,37 +428,57 @@ def encode_runways_and_taxiways(tile,airport_layer,dico_airports,vector_map,patc
         ## First runways
         for (runway_pol,runway_start,runway_end,runway_width) in apt['runway'][1]+apt['runway'][2]:
             runway_length=VECT.length_in_meters(numpy.vstack((runway_start,runway_end)))
-            refine_size=max(runway_length//runway_chunks,7)
-            for pol in VECT.ensure_MultiPolygon(VECT.cut_to_tile(runway_pol).simplify(0.000005)):
-                way=VECT.refine_way(numpy.array(pol.exterior.coords),refine_size)
+            refine_size=max(runway_length//runway_chunks,chunk_min_size)
+            for pol in VECT.ensure_MultiPolygon(VECT.cut_to_tile(runway_pol)):
+                way=numpy.round(VECT.refine_way(numpy.array(pol.exterior.coords),refine_size),7)
                 alti_way=numpy.array([VECT.weighted_alt(node,alt_idx,alt_dico,tile.dem) for node in way]).reshape((len(way),1))
                 vector_map.insert_way(numpy.hstack([way,alti_way]),'RUNWAY',check=True)
                 pols.append(pol)
         for pol in pols:
             for subpol in VECT.ensure_MultiPolygon(pol.difference(ops.cascaded_union([pol2 for pol2 in pols if pol2!=pol]))):
-                seeds.append(numpy.array(subpol.representative_point()))
+                seeds['RUNWAY'].append(numpy.array(subpol.representative_point()))
             for subpol in VECT.ensure_MultiPolygon(pol.intersection(ops.cascaded_union([pol2 for pol2 in pols if pol2!=pol]))):
-                seeds.append(numpy.array(subpol.representative_point()))   
+                seeds['RUNWAY'].append(numpy.array(subpol.representative_point()))   
         ## Then taxiways
-        cleaned_taxiway_area=VECT.improved_buffer(apt['taxiway'][0].difference(VECT.improved_buffer(apt['runway'][0].union(apt['hangar']),20,0,0)),5,3,1)
+        ## Not sure if it is best to separate them from the runway or not...  
+        cleaned_taxiway_area=VECT.improved_buffer(apt['taxiway'][0].difference(VECT.improved_buffer(apt['runway'][0],5,0,0).union(VECT.improved_buffer(apt['hangar'],20,0,0))),3,2,0.5)
+        #cleaned_taxiway_area=VECT.improved_buffer(apt['taxiway'][0].difference(VECT.improved_buffer(apt['hangar'],20,0,0)),0,1,0.5)
         for pol in VECT.ensure_MultiPolygon(VECT.cut_to_tile(cleaned_taxiway_area)):
-            way=VECT.refine_way(numpy.array(pol.exterior),20)
+            if not pol.is_valid or pol.is_empty or pol.area<1e-9: 
+                continue
+            way=numpy.round(VECT.refine_way(numpy.array(pol.exterior),20),7)
             alti_way=numpy.array([VECT.weighted_alt(node,alt_idx,alt_dico,tile.dem) for node in way]).reshape((len(way),1))
-            vector_map.insert_way(numpy.hstack([way,alti_way]),'RUNWAY',check=True) 
+            vector_map.insert_way(numpy.hstack([way,alti_way]),'TAXIWAY',check=True) 
             for subpol in pol.interiors:
-                way=VECT.refine_way(numpy.array(subpol),20)
+                way=numpy.round(VECT.refine_way(numpy.array(subpol),20),7)
                 alti_way=numpy.array([VECT.weighted_alt(node,alt_idx,alt_dico,tile.dem) for node in way]).reshape((len(way),1))
-                vector_map.insert_way(numpy.hstack([way,alti_way]),'RUNWAY',check=True)
-            seeds.append(numpy.array(pol.representative_point()))
-    if seeds:
-        if 'RUNWAY' in vector_map.seeds:
-            vector_map.seeds['RUNWAY']+=seeds
-        else:
-            vector_map.seeds['RUNWAY']=seeds
+                vector_map.insert_way(numpy.hstack([way,alti_way]),'TAXIWAY',check=True)
+            seeds['TAXIWAY'].append(numpy.array(pol.representative_point()))
+        ## Try to bring some aprons with, we are looking for the small ones along runways, you just need to add the 'include' tag to that apron in JOSM (local copy)
+        for wayid in apt['apron'][1]: 
+            if wayid not in airport_layer.dicosmtags['w'] or 'include' not in airport_layer.dicosmtags['w'][wayid]: continue
+            try:
+                way=numpy.round(numpy.array([airport_layer.dicosmn[nodeid] for nodeid in airport_layer.dicosmw[wayid]])-numpy.array([tile.lon,tile.lat]),7)
+                way=numpy.round(VECT.refine_way(way,15),7)
+                apron_pol=geometry.Polygon(way)
+                if not apron_pol.is_empty and runway_pol.is_valid:    
+                    alti_way=numpy.array([VECT.weighted_alt(node,alt_idx,alt_dico,tile.dem) for node in way]).reshape((len(way),1))
+                    vector_map.insert_way(numpy.hstack([way,alti_way]),'APRON',check=True) 
+                    seeds['APRON'].append(numpy.array(apron_pol.representative_point()))
+            except:
+                pass
+    for surface in ('RUNWAY','TAXIWAY','APRON'):
+        if seeds[surface]:
+            if surface in vector_map.seeds:
+                vector_map.seeds[surface]+=seeds[surface]
+            else:
+                vector_map.seeds[surface]=seeds[surface]
     plural_rwy='s' if total_rwy>1 else ''
     plural_taxi='s' if total_taxi>1 else ''    
     UI.vprint(1,"   Auto-patched",total_rwy,"runway"+plural_rwy+" and",total_taxi,"piece"+plural_taxi+" of taxiway.")
-    return ops.cascaded_union([dico_airports[airport]['runway'][0] for airport in dico_airports]+[dico_airports[airport]['taxiway'][0] for airport in dico_airports])       
+    return ops.cascaded_union([dico_airports[airport]['runway'][0] for airport in dico_airports]+\
+                              [dico_airports[airport]['taxiway'][0] for airport in dico_airports]+\
+                              [dico_airports[airport]['apron'][0] for airport in dico_airports])       
 ####################################################################################################        
 
 ####################################################################################################    
@@ -438,35 +489,37 @@ def encode_hangars(tile,dico_airports,vector_map,patches_list):
         for pol in VECT.ensure_MultiPolygon(VECT.cut_to_tile(dico_airports[airport]['hangar'])):
             way=numpy.array(pol.exterior.coords)
             alti_way=numpy.ones((len(way),1))*numpy.min(tile.dem.alt_vec(way))
-            vector_map.insert_way(numpy.hstack([way,alti_way]),'INTERP_ALT',check=True) 
+            vector_map.insert_way(numpy.hstack([way,alti_way]),'HANGAR',check=True) 
             seeds.append(numpy.array(pol.representative_point()))
     if seeds:
-        if 'INTERP_ALT' in vector_map.seeds:
-            vector_map.seeds['INTERP_ALT']+=seeds
+        if 'HANGAR' in vector_map.seeds:
+            vector_map.seeds['HANGAR']+=seeds
         else:
-            vector_map.seeds['INTERP_ALT']=seeds  
+            vector_map.seeds['HANGAR']=seeds  
     return 1    
 ####################################################################################################    
     
 ####################################################################################################    
-def flatten_helipads(airport_layer,vector_map,tile):
+def flatten_helipads(airport_layer,vector_map,tile, patches_area):
     multipol=[]
     seeds=[]
     total=0
+    # helipads whose boundary is encoded in OSM
     for wayid in (x for x in airport_layer.dicosmw if x in airport_layer.dicosmtags['w'] and 'aeroway' in airport_layer.dicosmtags['w'][x] and airport_layer.dicosmtags['w'][x]['aeroway']=='helipad'):
         if airport_layer.dicosmw[wayid][0]!=airport_layer.dicosmw[wayid][-1]: continue
         way=numpy.round(numpy.array([airport_layer.dicosmn[nodeid] for nodeid in airport_layer.dicosmw[wayid]])-numpy.array([[tile.lon,tile.lat]]),7)
         pol=geometry.Polygon(way)
-        if (pol.is_empty) or (not pol.is_valid) or (not pol.area): continue
+        if (pol.is_empty) or (not pol.is_valid) or (not pol.area) or (pol.intersects(patches_area)): continue
         multipol.append(pol)
         alti_way=numpy.ones((len(way),1))*numpy.mean(tile.dem.alt_vec(way))
         vector_map.insert_way(numpy.hstack([way,alti_way]),'INTERP_ALT',check=True) 
         seeds.append(numpy.array(pol.representative_point()))
         total+=1
     helipad_area=ops.cascaded_union(multipol)
+    # helipads that are only encoded as nodes, they will be grown into hexagons
     for nodeid in (x for x in airport_layer.dicosmn if x in airport_layer.dicosmtags['n'] and 'aeroway' in airport_layer.dicosmtags['n'][x] and airport_layer.dicosmtags['n'][x]['aeroway']=='helipad'):
         center=numpy.round(numpy.array(airport_layer.dicosmn[nodeid])-numpy.array([tile.lon,tile.lat]),7)
-        if geometry.Point(center).intersects(helipad_area): 
+        if geometry.Point(center).intersects(helipad_area) or geometry.Point(center).intersects(patches_area): 
             continue
         way=numpy.round(center+numpy.array([[cos(k*pi/3)*7*GEO.m_to_lon(tile.lat),sin(k*pi/3)*7*GEO.m_to_lat] for k in range(7)]),7)
         alti_way=numpy.ones((len(way),1))*numpy.mean(tile.dem.alt_vec(way))
