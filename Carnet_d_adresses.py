@@ -524,8 +524,8 @@ def http_requests_form(til_x_left,til_y_top,zoomlevel,website):
     elif website=='DK': 
         [latmax,lonmin]=gtile_to_wgs84(til_x_left,til_y_top,zoomlevel)
         [latmin,lonmax]=gtile_to_wgs84(til_x_left+8,til_y_top+8,zoomlevel)
-        url="http://kortforsyningen.kms.dk/orto_foraar?LAYERS=orto_foraar&FORMAT=image%2Fjpeg"+\
-            "&BGCOLOR=0xFFFFFF&TICKET=d4184a234513c2eab77edd8ac68e561b&PROJECTION=EPSG%3A4326"+\
+        url="http://services.kortforsyningen.dk/orto_foraar?LAYERS=orto_foraar&FORMAT=image%2Fjpeg"+\
+            "&BGCOLOR=0xFFFFFF&TICKET=d12107f70a3ee93153f313c7c502169a&PROJECTION=EPSG%3A4326"+\
             "&SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&STYLES=&SRS=EPSG%3A4326&BBOX="+\
             str(lonmin)+','+str(latmin)+','+str(lonmax)+','+str(latmax)+\
             "&WIDTH=2048&HEIGHT=2048"
