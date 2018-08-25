@@ -1,5 +1,5 @@
 from math import ceil, sqrt, atan2
-import numpy
+import numpy 
 from shapely import geometry, affinity
 from shapely import ops
 from rtree import index
@@ -38,7 +38,7 @@ scaly=1
 ##############################################################################
 class Vector_Map():
     
-    dico_attributes = {'DUMMY':0,'WATER':1,'SEA':2,'SEA_EQUIV':4,'RUNWAY':8,'INTERP_ALT':16,'HANGAR':32}
+    dico_attributes = {'DUMMY':0,'WATER':1,'SEA':2,'SEA_EQUIV':4,'INTERP_ALT':8,'RUNWAY':16,'TAXIWAY':32,'APRON':64,'HANGAR':128}
     def __init__(self):
         self.dico_nodes={}  # keys are tuples of 2 floats (in our case (lon-base_lon), lat-base_lat) and values are ints (ids)  
         self.dico_edges={}  # keys are tuples of 2 ints (end-points ids) and values are ints (ids). An egde id is needed for the index (bbox)
@@ -525,7 +525,7 @@ def indexed_difference(idx_pol1,dico_pol1,idx_pol2,dico_pol2):
     return idx_out,dico_out
 ##############################################################################
 ##############################################################################
-def coastline_to_MultiPolygon(coastline,lat,lon):
+def coastline_to_MultiPolygon(coastline,lat,lon,custom_source=False):
     ######################################################################
     def encode_to_next(coord,new_way,remove_coords):
         if coord in inits:
@@ -562,7 +562,7 @@ def coastline_to_MultiPolygon(coastline,lat,lon):
     osm_badpoints=[]
     for line in coastline.geoms:
         if line.is_ring:
-            if geometry.LinearRing(line).is_ccw:
+            if custom_source or geometry.LinearRing(line).is_ccw:
                 islands.append(list(line.coords)) 
             else:
                 interior_seas.append(list(line.coords)) 
@@ -578,7 +578,7 @@ def coastline_to_MultiPolygon(coastline,lat,lon):
             ends.append(bd_coord(tmp[-1]))
             inits.append(bd_coord(tmp[0]))
     if osm_error:
-        UI.lvprint(1,"ERROR is OSM coastline data. Coastline abruptly stops at",osm_badpoints)
+        UI.lvprint(1,"ERROR in OSM coastline data. Coastline abruptly stops at",osm_badpoints)
         return geometry.MultiPolygon()
     bdcoords=sorted(ends+inits)
     UI.vprint(3,bdcoords)
@@ -728,6 +728,20 @@ def least_square_fit_altitude_along_way(way,steps,dem,weights=False):
         return (linestring,numpy.polyfit(numpy.arange(steps+1)/steps,tmp,7,w=w))
 
 ##############################################################################
+
+##############################################################################
+#def spline_fit_altitude_along_way(way,steps,dem,weights=False):
+#    linestring=affinity.affine_transform(geometry.LineString(way), [scalx,0,0,1,0,0])
+#    tmp=dem.alt_vec(numpy.array(geometry.LineString([linestring.interpolate(x,normalized=True) for x in numpy.arange(steps+1)/steps])*numpy.array([1/scalx,1])))
+#    if not weights:
+#        return (linestring,scipy.interpolate.splrep(numpy.arange(steps+1)/steps,tmp,s=0))
+#    else:
+#        w=(numpy.maximum(numpy.arange(steps+1),steps-numpy.arange(steps+1))+steps//2)**2
+#        w/=numpy.sum(w)
+#        return (linestring,scipy.interpolate.splrep(numpy.arange(steps+1)/steps,tmp,w=w))
+#
+##############################################################################
+
 ##############################################################################
 def weighted_alt(node,alt_idx,alt_dico,dem):
     eps1=0.003
@@ -741,6 +755,7 @@ def weighted_alt(node,alt_idx,alt_dico,dem):
         dist=pt.distance(linestring)*GEO.lat_to_m 
         weight=numpy.exp(-dist/(2*width))
         alti+=numpy.polyval(leastsquarefit,linestring.project(pt,normalized=True))*weight
+        #alti+=scipy.interpolate.splev(linestring.project(pt,normalized=True),splinefit,der=0)*weight
         weights+=weight
     if weights<1e-6:
         return dem.alt(node)

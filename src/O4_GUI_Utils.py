@@ -124,7 +124,9 @@ class Ortho4XP_GUI(tk.Tk):
         for i in range(5):
             self.frame_steps.columnconfigure(i,weight=1)
         ttk.Button(self.frame_steps, text="Assemble Vector data",command=self.build_poly_file).grid(row=0,column=0, padx=5, pady=0,sticky=N+S+E+W)
-        ttk.Button(self.frame_steps, text="Triangulate 3D Mesh",command=self.build_mesh).grid(row=0,column=1, padx=5, pady=0,sticky=N+S+E+W)
+        build_mesh_button=ttk.Button(self.frame_steps, text="Triangulate 3D Mesh",command=self.build_mesh)
+        build_mesh_button.grid(row=0,column=1, padx=5, pady=0,sticky=N+S+E+W)
+        build_mesh_button.bind("<Shift-ButtonPress-1>", self.sort_mesh)
         ttk.Button(self.frame_steps, text=" Draw Water Masks  ",command=self.build_masks).grid(row=0,column=2, padx=5, pady=0,sticky=N+S+E+W)
         ttk.Button(self.frame_steps, text=" Build Imagery/DSF ",command=self.build_tile).grid(row=0,column=3, padx=5, pady=0,sticky=N+S+E+W)
         ttk.Button(self.frame_steps, text="    All in one     ",command=self.build_all).grid(row=0,column=4, padx=5, pady=0,sticky=N+S+E+W)
@@ -170,7 +172,11 @@ class Ortho4XP_GUI(tk.Tk):
             self.custom_build_dir.set(custom_build_dir)
             f.close()
         except:
-            pass
+            self.lat.set(48)
+            self.lon.set(-6)
+            self.default_website.set('BI')
+            self.default_zl.set(16)
+            self.custom_build_dir.set('')
 
     # GUI methods
     def write(self,line):
@@ -211,7 +217,7 @@ class Ortho4XP_GUI(tk.Tk):
         if self.default_website.get(): CFG.default_website=str(self.default_website.get())
         if self.default_zl.get(): CFG.default_zl=int(self.default_zl.get())
 
-    def get_lat_lon(self):
+    def get_lat_lon(self,check=True):
         error_string=''
         try:
             lat=int(self.lat.get())
@@ -225,9 +231,11 @@ class Ortho4XP_GUI(tk.Tk):
                 error_string+="Longitude out of range (-180,179)."
         except:
             error_string+="Longitude wrongly encoded."
-        if error_string:
+        if error_string and check:
             UI.vprint(0,"Error: "+error_string)
             return None
+        elif error_string:
+            return (48,-6)
         return (lat,lon)
         
     def tile_from_interface(self):
@@ -253,6 +261,15 @@ class Ortho4XP_GUI(tk.Tk):
         except: 
             UI.vprint(1,"Process aborted.\n"); return 0
         self.working_thread=threading.Thread(target=MESH.build_mesh,args=[tile])
+        self.working_thread.start()
+        
+    def sort_mesh(self,event):
+        try: 
+            tile=self.tile_from_interface()
+            tile.make_dirs()
+        except: 
+            UI.vprint(1,"Process aborted.\n"); return 0
+        self.working_thread=threading.Thread(target=MESH.sort_mesh,args=[tile])
         self.working_thread.start()
     
     def build_masks(self):
@@ -302,8 +319,8 @@ class Ortho4XP_GUI(tk.Tk):
             self.earth_window.lift()
             return 1
         except:
-            try: (lat,lon)=self.get_lat_lon()
-            except: return 0
+            try: (lat,lon)=self.get_lat_lon(check=False)
+            except: (lat,lon)=(48,-6)
             self.earth_window=Ortho4XP_Earth_Preview(self,lat,lon)        
             return 1
 
@@ -813,8 +830,8 @@ class Ortho4XP_Earth_Preview(tk.Toplevel):
         self.canvas.bind("<Control-ButtonPress-1>",self.toggle_to_custom)
         self.canvas.focus_set()
         self.draw_canvas(self.nx0,self.ny0)
-        self.active_lat=int(self.parent.lat.get())
-        self.active_lon=int(self.parent.lon.get())
+        self.active_lat=lat 
+        self.active_lon=lon 
         self.latlon.set(FNAMES.short_latlon(self.active_lat,self.active_lon))        
         [x0,y0]=GEO.wgs84_to_pix(self.active_lat+1,self.active_lon,self.earthzl)
         [x1,y1]=GEO.wgs84_to_pix(self.active_lat,self.active_lon+1,self.earthzl)
@@ -839,17 +856,19 @@ class Ortho4XP_Earth_Preview(tk.Toplevel):
         dico_color={11:'blue',12:'blue',13:'blue',14:'blue',15:'cyan',16:'green',17:'yellow',18:'orange',19:'red'}
         if self.dico_tiles_done:
             for tile in self.dico_tiles_done:
-                for objid in self.dico_tiles_done[tile]:
+                for objid in self.dico_tiles_done[tile][:2]:
                     self.canvas.delete(objid)
             self.dico_tiles_done={}
         if not self.grouped:
             for dir_name in os.listdir(self.working_dir):
-                if "zOrtho4XP_" in dir_name:
+                if "XP_" in dir_name:
                     try:
-                        lat=int(dir_name[-7:-4])
-                        lon=int(dir_name[-4:])
+                        lat=int(dir_name.split("XP_")[1][:3])
+                        lon=int(dir_name.split("XP_")[1][3:7])
                     except:
-                        continue                     
+                        continue
+                    # With the enlarged accepetance rule for directory name there might be more than one tile for the same (lat,lon), we skip all but the first encountered.    
+                    if (lat,lon) in self.dico_tiles_done: continue                      
                     [x0,y0]=GEO.wgs84_to_pix(lat+1,lon,self.earthzl)
                     [x1,y1]=GEO.wgs84_to_pix(lat,lon+1,self.earthzl)
                     if os.path.isfile(os.path.join(self.working_dir,dir_name,"Earth nav data",FNAMES.long_latlon(lat,lon)+'.dsf')):
@@ -878,11 +897,12 @@ class Ortho4XP_Earth_Preview(tk.Toplevel):
                                 content=prov+'\n'+str(zl)
                         self.dico_tiles_done[(lat,lon)]=(\
                                 self.canvas.create_rectangle(x0,y0,x1,y1,fill=color,stipple='gray12'),\
-                                self.canvas.create_text((x0+x1)//2,(y0+y1)//2,justify=CENTER,text=content)\
+                                self.canvas.create_text((x0+x1)//2,(y0+y1)//2,justify=CENTER,text=content),\
+                                dir_name\
                                 )
                         link=os.path.join(CFG.custom_scenery_dir,'zOrtho4XP_'+FNAMES.short_latlon(lat,lon))
                         if os.path.isdir(link):
-                            if os.path.samefile(os.path.realpath(link),os.path.realpath(os.path.join(self.working_dir,'zOrtho4XP_'+FNAMES.short_latlon(lat,lon)))):
+                            if os.path.samefile(os.path.realpath(link),os.path.realpath(os.path.join(self.working_dir,dir_name))):
                                 self.canvas.itemconfig(self.dico_tiles_done[(lat,lon)][0],stipple='gray50')
         elif self.grouped and os.path.isdir(os.path.join(self.working_dir,'Earth nav data')):
             for dir_name in os.listdir(os.path.join(self.working_dir,'Earth nav data')):
@@ -913,15 +933,21 @@ class Ortho4XP_Earth_Preview(tk.Toplevel):
                         if (prov and zl):
                             color=dico_color[zl]
                             content=prov+'\n'+str(zl)
-                            self.dico_tiles_done[(lat,lon)]=(\
+                    self.dico_tiles_done[(lat,lon)]=(\
                                 self.canvas.create_rectangle(x0,y0,x1,y1,fill=color,stipple='gray12'),\
-                                self.canvas.create_text((x0+x1)//2,(y0+y1)//2,justify=CENTER,text=content)\
+                                self.canvas.create_text((x0+x1)//2,(y0+y1)//2,justify=CENTER,text=content),\
+                                dir_name\
                                 )
             link=os.path.join(CFG.custom_scenery_dir,'zOrtho4XP_'+os.path.basename(self.working_dir))
             if os.path.isdir(link):
                 if os.path.samefile(os.path.realpath(link),os.path.realpath(self.working_dir)):
                     for (lat0,lon0) in self.dico_tiles_done:
                         self.canvas.itemconfig(self.dico_tiles_done[(lat0,lon0)][0],stipple='gray50')
+        for (lat,lon) in self.dico_tiles_todo:
+            [x0,y0]=GEO.wgs84_to_pix(lat+1,lon,self.earthzl)
+            [x1,y1]=GEO.wgs84_to_pix(lat,lon+1,self.earthzl)
+            self.canvas.delete(self.dico_tiles_todo[(lat,lon)]) 
+            self.dico_tiles_todo[(lat,lon)]=self.canvas.create_rectangle(x0,y0,x1,y1,fill='red',stipple='gray12') 
         return
     
     def trash(self):
@@ -942,7 +968,7 @@ class Ortho4XP_Earth_Preview(tk.Toplevel):
             except Exception as e:
                 UI.vprint(3,e)
             if (self.active_lat,self.active_lon) in self.dico_tiles_done:
-                for objid in self.dico_tiles_done[(self.active_lat,self.active_lon)]:
+                for objid in self.dico_tiles_done[(self.active_lat,self.active_lon)][:2]:
                     self.canvas.delete(objid)
                 del(self.dico_tiles_done[(self.active_lat,self.active_lon)])
         if self.v_['Tile (textures)'].get() and not self.grouped:
@@ -977,8 +1003,9 @@ class Ortho4XP_Earth_Preview(tk.Toplevel):
             return
         if not self.grouped:
             link=os.path.join(CFG.custom_scenery_dir,'zOrtho4XP_'+FNAMES.short_latlon(lat,lon))
-            target=os.path.realpath(os.path.join(self.working_dir,'zOrtho4XP_'+FNAMES.short_latlon(lat,lon)))
-            if os.path.isdir(link) and os.path.samefile(os.path.realpath(link),os.path.realpath(os.path.join(self.working_dir,'zOrtho4XP_'+FNAMES.short_latlon(lat,lon)))):
+            #target=os.path.realpath(os.path.join(self.working_dir,'zOrtho4XP_'+FNAMES.short_latlon(lat,lon)))
+            target=os.path.realpath(os.path.join(self.working_dir,self.dico_tiles_done[(lat,lon)][-1]))
+            if os.path.isdir(link) and os.path.samefile(os.path.realpath(link),target):
                 os.remove(link)
                 self.canvas.itemconfig(self.dico_tiles_done[(lat,lon)][0],stipple='gray12')
                 return 

@@ -1,25 +1,15 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <osm version='0.6' generator='JOSM'>
-  <node id='-40240' action='modify' lat='46.760680978' lon='9.09344494075' />
-  <node id='-40241' action='modify' lat='46.76053398261' lon='9.09306406707' />
-  <node id='-40243' action='modify' lat='46.7606626036' lon='9.0929540965' />
-  <node id='-40245' action='modify' lat='46.76068281544' lon='9.09283071488' />
-  <node id='-40247' action='modify' lat='46.76064974151' lon='9.09266978234' />
-  <node id='-40249' action='modify' lat='46.76074988102' lon='9.09258127078' />
-  <node id='-40251' action='modify' lat='46.76083256656' lon='9.09277170628' />
-  <node id='-40257' action='modify' lat='46.76082797298' lon='9.0928360793' />
-  <node id='-40259' action='modify' lat='46.76097496756' lon='9.09319817752' />
-  <way id='-40242' action='modify'>
-    <nd ref='-40240' />
-    <nd ref='-40241' />
-    <nd ref='-40243' />
-    <nd ref='-40245' />
-    <nd ref='-40247' />
-    <nd ref='-40249' />
-    <nd ref='-40251' />
-    <nd ref='-40257' />
-    <nd ref='-40259' />
-    <nd ref='-40240' />
+  <node id='-39100' action='modify' lat='46.76069659624' lon='9.09355088801' />
+  <node id='-39102' action='modify' lat='46.76040536132' lon='9.09288972348' />
+  <node id='-39114' action='modify' lat='46.76071497062' lon='9.09248739213' />
+  <node id='-39116' action='modify' lat='46.76111369333' lon='9.09348115057' />
+  <way id='-39118' action='modify'>
+    <nd ref='-39100' />
+    <nd ref='-39102' />
+    <nd ref='-39114' />
+    <nd ref='-39116' />
+    <nd ref='-39100' />
     <tag k='cst_alt_rel' v='0' />
   </way>
 </osm>
