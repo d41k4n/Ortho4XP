@@ -14,15 +14,15 @@ import O4_OSM_Utils as OSM
 import O4_Version
 
 if 'dar' in sys.platform:
-    Triangle4XP_cmd = os.path.join(FNAMES.Utils_dir,"Triangle4XP_v130.app ")
+    Triangle4XP_cmd = os.path.join(FNAMES.Utils_dir,"Triangle4XP.app ")
     triangle_cmd    = os.path.join(FNAMES.Utils_dir,"triangle.app ")
     sort_mesh_cmd   = os.path.join(FNAMES.Utils_dir,"moulinette.app ")
 elif 'win' in sys.platform: 
-    Triangle4XP_cmd = os.path.join(FNAMES.Utils_dir,"Triangle4XP_v130.exe ")
+    Triangle4XP_cmd = os.path.join(FNAMES.Utils_dir,"Triangle4XP.exe ")
     triangle_cmd    = os.path.join(FNAMES.Utils_dir,"triangle.exe ")
     sort_mesh_cmd   = os.path.join(FNAMES.Utils_dir,"moulinette.exe ")
 else:
-    Triangle4XP_cmd = os.path.join(FNAMES.Utils_dir,"Triangle4XP_v130 ")
+    Triangle4XP_cmd = os.path.join(FNAMES.Utils_dir,"Triangle4XP ")
     triangle_cmd    = os.path.join(FNAMES.Utils_dir,"triangle ")
     sort_mesh_cmd   = os.path.join(FNAMES.Utils_dir,"moulinette ")
 
@@ -94,16 +94,13 @@ def post_process_nodes_altitudes(tile):
     water_tris=set()
     sea_tris=set()
     interp_alt_tris=set()
-    runway_tris=set()
     for i in range(nbr_tri):
         line = f_ele.readline()
         # triangle attributes are powers of 2, except for the dummy attributed which doesn't require post-treatment
         if line[-2]=='0': continue  
         (v1,v2,v3,attr)=[int(x)-1 for x in line.split()[1:5]]
         attr+=1
-        if attr & dico_attributes['RUNWAY']: 
-            runway_tris.add((v1,v2,v3))
-        elif attr & dico_attributes['INTERP_ALT']: 
+        if attr >= dico_attributes['INTERP_ALT']: 
             interp_alt_tris.add((v1,v2,v3))
         elif attr & dico_attributes['SEA']:
             sea_tris.add((v1,v2,v3))
@@ -133,10 +130,16 @@ def post_process_nodes_altitudes(tile):
                 vertices[6*v2+2]=max(vertices[6*v2+2],0)
                 vertices[6*v3+2]=max(vertices[6*v3+2],0)
     UI.vprint(1,"   Treatment of airports, roads and patches.")
-    for (v1,v2,v3) in (interp_alt_tris | runway_tris):
+    for (v1,v2,v3) in interp_alt_tris:
             vertices[6*v1+2]=vertices[6*v1+5]
             vertices[6*v2+2]=vertices[6*v2+5]
             vertices[6*v3+2]=vertices[6*v3+5]
+            vertices[6*v1+3]=0
+            vertices[6*v2+3]=0
+            vertices[6*v3+3]=0
+            vertices[6*v1+4]=0
+            vertices[6*v2+4]=0
+            vertices[6*v3+4]=0
     UI.vprint(1,"-> Writing output nodes file.")        
     f_node = open(FNAMES.output_node_file(tile),'w')
     f_node.write(init_line_f_node)
@@ -286,11 +289,16 @@ def build_mesh(tile):
     node_file    = FNAMES.input_node_file(tile)
     alt_file     = FNAMES.alt_file(tile)
     weight_file  = FNAMES.weight_file(tile)
-    for file in (poly_file,node_file,alt_file):
-        if not os.path.isfile(file):
-            UI.exit_message_and_bottom_line("\nERROR: Could not find ",file)
-            return 0
+    if not os.path.isfile(node_file):
+        UI.exit_message_and_bottom_line("\nERROR: Could not find ",node_file)
+        return 0
+    if not tile.iterate and not os.path.isfile(poly_file):
+        UI.exit_message_and_bottom_line("\nERROR: Could not find ",poly_file)
+        return 0
     if not tile.iterate:
+        if not os.path.isfile(alt_file):
+            UI.exit_message_and_bottom_line("\nERROR: Could not find",alt_file,". You must run Step 1 first.")
+            return 0
         try:
             fill_nodata = tile.fill_nodata or "to zero"
             source= ((";" in tile.custom_dem) and tile.custom_dem.split(";")[0]) or tile.custom_dem
@@ -298,15 +306,19 @@ def build_mesh(tile):
             if not  os.path.getsize(alt_file)==4*tile.dem.nxdem*tile.dem.nydem:
                 UI.exit_message_and_bottom_line("\nERROR: Cached raster elevation does not match the current custom DEM specs.\n       You must run Step 1 and Step 2 with the same elevation base.")
                 return 0
-        except:
+        except Exception as e:
+            print(e)
             UI.exit_message_and_bottom_line("\nERROR: Could not determine the appropriate source. Please check your custom_dem entry.")
             return 0
     else:
         try:
             source= ((";" in tile.custom_dem) and tile.custom_dem.split(";")[tile.iterate]) or tile.custom_dem
-            tile.dem=DEM.DEM(tile.lat,tile.lon,source,fill_nodata=False,info_only=False)
-            tile.dem.write_to_file(FNAMES.alt_file(tile))
-        except:
+            tile.dem=DEM.DEM(tile.lat,tile.lon,source,fill_nodata=False,info_only=True)
+            if not os.path.isfile(alt_file) or not os.path.getsize(alt_file)==4*tile.dem.nxdem*tile.dem.nydem:
+                tile.dem=DEM.DEM(tile.lat,tile.lon,source,fill_nodata=False,info_only=False)
+                tile.dem.write_to_file(FNAMES.alt_file(tile))
+        except Exception as e:
+            print(e)
             UI.exit_message_and_bottom_line("\nERROR: Could not determine the appropriate source. Please check your custom_dem entry.")
             return 0
     try:
