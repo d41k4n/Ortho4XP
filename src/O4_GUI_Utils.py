@@ -40,9 +40,7 @@ class Ortho4XP_GUI(tk.Tk):
         # Let UI know ourself
         UI.gui=self
         # Initialize providers combobox entries
-        self.map_list= sorted([provider_code for provider_code in list(IMG.providers_dict) if IMG.providers_dict[provider_code]['directory']=='Global'])+\
-                       sorted(list(IMG.combined_providers_dict))+\
-                       sorted([provider_code for provider_code in list(IMG.providers_dict) if IMG.providers_dict[provider_code]['directory']!='Global'])
+        self.map_list= sorted([provider_code for provider_code in set(IMG.providers_dict) if IMG.providers_dict[provider_code]['in_GUI']]+sorted(set(IMG.combined_providers_dict)))
         try: self.map_list.remove('OSM')
         except: pass
         try: self.map_list.remove('SEA')
@@ -370,23 +368,13 @@ class Ortho4XP_Custom_ZL(tk.Toplevel):
         self.parent=parent
         self.lat=lat
         self.lon=lon 
-        self.map_list= sorted([provider_code for provider_code in list(IMG.providers_dict) if IMG.providers_dict[provider_code]['directory']=='Global'])+\
-                       sorted(list(IMG.combined_providers_dict))+\
-                       sorted([provider_code for provider_code in list(IMG.providers_dict) if IMG.providers_dict[provider_code]['directory']!='Global'])
-        try: self.map_list.remove('SEA')
-        except: pass
-        self.reduce_map_list=self.map_list[:]
-        try: self.reduced_map_list.remove('OSM')
-        except: pass
-        
+        self.map_list= sorted([provider_code for provider_code in set(IMG.providers_dict) if IMG.providers_dict[provider_code]['in_GUI']]+sorted(set(IMG.combined_providers_dict)))
         self.map_list=[provider_code for provider_code in self.map_list if provider_code!='SEA']
         self.reduced_map_list=[provider_code for provider_code in self.map_list if provider_code!='OSM']
         self.points=[]
         self.coords=[]
         self.polygon_list=[]
         self.polyobj_list=[]
-        
-        
         
         tk.Toplevel.__init__(self)
         self.title('Preview / Custom zoomlevels')
@@ -406,7 +394,7 @@ class Ortho4XP_Custom_ZL(tk.Toplevel):
 
         self.zlpol=tk.IntVar()
         try: # default_zl might still be empty 
-            self.zlpol.set(max(min(int(self.parent.default_zl.get())+1,19),12))
+            self.zlpol.set(max(min(int(self.parent.default_zl.get())+1,19),15))
         except:
             self.zlpol.set(17)
         self.gb = tk.StringVar()
@@ -457,9 +445,10 @@ class Ortho4XP_Custom_ZL(tk.Toplevel):
         ttk.Button(self.frame_left,text='Delete ZL zone',command=self.delete_zone_cmd).grid(row=row,column=0,padx=5,pady=3,sticky=N+S+E+W); row+=1
         ttk.Button(self.frame_left,text='Make GeoTiffs',command=self.build_geotiffs_ifc).grid(row=row,column=0,padx=5,pady=3,sticky=N+S+E+W); row+=1 
         ttk.Button(self.frame_left,text='Extract Mesh ',command=self.extract_mesh_ifc).grid(row=row,column=0,padx=5,pady=3,sticky=N+S+E+W); row+=1 
-        tk.Label(self.frame_left,text="Ctrl+B1 : add texture\nShift+B1: add zone point\nCtrl+B2 : delete zone\nCtrl+Del: delete all",bg="light green",justify=LEFT).grid(row=row,column=0,padx=5,pady=20,sticky=N+S+E+W); row+=1
-        ttk.Button(self.frame_left,text='   Abandon   ',command=self.destroy).grid(row=row,column=0,padx=5,pady=3,sticky=N+S+E+W); row+=1
-        ttk.Button(self.frame_left,text='Save and Exit',command=self.save_zone_list).grid(row=row,column=0,padx=5,pady=3,sticky=N+S+E+W); row+=1
+        tk.Label(self.frame_left,text="Ctrl+B1 : add texture\nShift+B1: add zone point\nCtrl+B2 : delete zone",bg="light green",justify=LEFT).grid(row=row,column=0,padx=5,pady=20,sticky=N+S+E+W); row+=1
+        ttk.Button(self.frame_left,text='    Apply    ',command=self.save_zone_list).grid(row=row,column=0,padx=5,pady=3,sticky=N+S+E+W); row+=1
+        ttk.Button(self.frame_left,text='    Reset    ',command=self.delAll).grid(row=row,column=0,padx=5,pady=3,sticky=N+S+E+W); row+=1
+        ttk.Button(self.frame_left,text='    Exit     ',command=self.destroy).grid(row=row,column=0,padx=5,pady=3,sticky=N+S+E+W); row+=1
         self.canvas = tk.Canvas(self.frame_right,bd=0,height=750,width=750)
         self.canvas.grid(row=0,column=0,sticky=N+S+E+W)     
 
@@ -514,7 +503,6 @@ class Ortho4XP_Custom_ZL(tk.Toplevel):
         self.canvas.bind("<Shift-ButtonPress-1>",self.newPoint)
         self.canvas.bind("<Control-Shift-ButtonPress-1>",self.newPointGrid)
         self.canvas.bind("<Control-ButtonPress-1>",self.newPol)
-        self.canvas.bind("<Control-Delete>",self.delAll)
         self.canvas.focus_set()
         self.canvas.bind('p', self.newPoint)
         self.canvas.bind('d', self.delete_zone_cmd)
@@ -622,7 +610,7 @@ class Ortho4XP_Custom_ZL(tk.Toplevel):
                 self.polyobj_list.pop(idx)
         return        
         
-    def delAll(self,event):
+    def delAll(self):
         copy=self.polygon_list[:]
         for poly in copy:
             idx=self.polygon_list.index(poly)
@@ -721,7 +709,6 @@ class Ortho4XP_Custom_ZL(tk.Toplevel):
         extract_mesh_thread.start()
         return
     
-    
     def delete_zone_cmd(self):
         try:
             self.canvas.delete(self.poly_curr)
@@ -749,7 +736,7 @@ class Ortho4XP_Custom_ZL(tk.Toplevel):
                 tmp.append(pt) 
             zone_list.append([tmp,item[2],item[3]])
         CFG.zone_list=zone_list
-        self.destroy()    
+        #self.destroy()    
         return
 ############################################################################################
 
@@ -784,7 +771,6 @@ class Ortho4XP_Earth_Preview(tk.Toplevel):
             self.v_[item]=tk.IntVar()
         self.latlon = tk.StringVar()
         
-    
         # Frames
         self.frame_left   =  tk.Frame(self, border=4, relief=RIDGE,bg='light green')
         self.frame_left.grid(row=0,column=0,sticky=N+S+W+E)
@@ -792,7 +778,6 @@ class Ortho4XP_Earth_Preview(tk.Toplevel):
         self.frame_right.grid(row=0,rowspan=60,column=1,sticky=N+S+W+E)
         self.frame_right.rowconfigure(0,weight=1,minsize=self.canvas_min_y)
         self.frame_right.columnconfigure(0,weight=1,minsize=self.canvas_min_x)
-
 
         # Widgets
         row=0
@@ -823,9 +808,9 @@ class Ortho4XP_Earth_Preview(tk.Toplevel):
         # Exit
         ttk.Button(self.frame_left,text='      Exit      ',command=self.exit).grid(row=row,column=0,padx=5,pady=5,sticky=N+S+E+W)
         row+=1
-        #tk.Label(self.frame_left,text="Shortcuts :\n-------------------\nB2-press+hold=move map\nB1-double-click=select active lat/lon\nShift+B1=add for batch build\nCtrl+B1= link in Custom Scenery\n\nActive lat/lon\n---------------------",
-        #         bg="light green").grid(row=row,column=0,padx=5,pady=5,sticky=N+S+E+W)
-        #row+=1
+        tk.Label(self.frame_left,text="Shortcuts :\n-----------------\nB2-press+hold=move map\nB1-double-click=select active\nShift+B1=add to batch build\nCtrl+B1=link in Custom Scenery",
+                 bg="light green").grid(row=row,column=0,padx=0,pady=5,sticky=N+S+E+W)
+        row+=1
 
         self.canvas  =  tk.Canvas(self.frame_right,bd=0)
         self.canvas.grid(row=0,column=0,sticky=N+S+E+W)     
@@ -1049,7 +1034,6 @@ class Ortho4XP_Earth_Preview(tk.Toplevel):
             for (lat0,lon0) in self.dico_tiles_done:
                 self.canvas.itemconfig(self.dico_tiles_done[(lat0,lon0)][0],stipple='gray50')    
         return 
-
 
     def add_tile(self,event):
         x=self.canvas.canvasx(event.x)
