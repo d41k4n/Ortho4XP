@@ -1,10 +1,5 @@
 request_type=tms
-#request_type=wmts
-#layers=ORTHOIMAGERY.ORTHOPHOTOS
-#tilematrixset=PM
-#tile_size=256
-#url_prefix=http://wxs.ign.fr/61fs25ymczag0c67naqvvmap/geoportail/wmts?
+grid_type=webmercator
 url_template=http://wxs.ign.fr/61fs25ymczag0c67naqvvmap/geoportail/wmts?&SERVICE=WMTS&VERSION=1.0.0&REQUEST=GetTile&LAYER=ORTHOIMAGERY.ORTHOPHOTOS&STYLE=normal&FORMAT=image/jpeg&TILEMATRIXSET=PM&TILEMATRIX={zoom}&TILEROW={y}&TILECOL={x}
 imagery_dir=grouped
-extent=FR_metro
-fake_headers={'Host':'wxs.ign.fr','User-Agent': user_agent_generic,'Accept':'*/*','Accept-Language':'en-US,en;q=0.5','Accept-Encoding':'gzip,deflate','Referer':'http://tab.geoportail.fr','Origin':'http://tab.geoportail.fr','Connection':'keep-alive'}
+in_GUI=False
