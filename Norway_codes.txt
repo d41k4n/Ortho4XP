@@ -1,0 +1,38 @@
+Oslo Ostlandet 2016    : 2229 (au dessus d'Oslo)
+Ostfold Vestfold 2015  : 1860 (Oslo et en dessous)
+Ostlandet 2016         : 2222 (au dessus de 2229)
+Hedmark Sor 2017       : 2373 (au dessus de 2222)
+Hedmark Nord 2015      : 2010 (au dessus de 2373)
+Telemark 2015          : 1615 (à gauche d'Oslo)
+Sorlandet 2014         : 686  (en bas au milieu)
+Rogaland 2012          : 612  (en bas à gauche et plus haut à gauche)
+Rogaland 2013          : 613  (Stavanger)
+Hardangervidda 2013    : 400  (centre à mi chemin entre Bergen et Oslo)
+Vestlandet 2013        : 773  (Bergen)
+Vestlandet 2014        : 774  (au dessus de Bergen)
+Sogn 2017              : 2372 (fjord Sogn partiel)
+Sogn 2015              : 1870 (fjord Sogn partiel)
+Sogn 2010              : 648  (fjord Sogn partiel)
+Moore 2013             : 534  (nord du Sogn fjord)
+Moore 2014             : 535  (nord du Sogn flord)
+Bergen 2016            : 2216 (Bergen ville et aéroport)
+Haugesund 2017         : 2369 (Haugesund)
+Ouest de Bergen 2017   : 2422 (Ouest de Bergen)
+
+------
+Tromso 2017            : 2374
+Tromso 2016            : 2224
+Nordland Sor 2014      : 567
+Finmark 2007           : 345
+Finmark 2008           : 346
+Finmark 2010           : 347
+Finmark 2011           : 348
+Finmark 2012           : 349
+Finmark 2015           : 1861
+Finnmar 2016           : 2313
+Troms 2017             : 2374
+Troms 2016             : 2224
+
+Lofoten 2009           : 499
+Nordland Nord 2015     : 1561
+ 
